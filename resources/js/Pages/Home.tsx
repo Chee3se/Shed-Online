@@ -1,10 +1,8 @@
 import React from 'react';
-import {Head, Link} from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
-const Home = ({auth}) => {
-
-
+export default function Home({ auth }: { auth: any }) {
     return (
         <Layout auth={auth}>
             <Head title="Home" />
@@ -13,6 +11,4 @@ const Home = ({auth}) => {
             </div>
         </Layout>
     );
-};
-
-export default Home;
+}
