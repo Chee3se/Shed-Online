@@ -9,7 +9,7 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
-Route::get('/offline', function () {
+Route::get('/singleplayer', function () {
     return Inertia::render('Offline');
 })->name('offline');
 
