@@ -97,7 +97,6 @@ export default function Offline({ auth }: { auth: any }) {
                 if (remainingCount > 0 && playerHandCards.length <= 3) {
                     const cards = await drawCards(1);
                     setPlayerHandCards(prevHandCards => [...prevHandCards, ...cards]);
-                    setRemainingCount(remainingCount - 1);
                 }
             } else {
                 if (botHandCards.includes(card)) {
@@ -115,7 +114,6 @@ export default function Offline({ auth }: { auth: any }) {
                 if (remainingCount > 0 && botHandCards.length <= 3) {
                     const cards = await drawCards(1);
                     setBotHandCards(prevHandCards => [...prevHandCards, ...cards]);
-                    setRemainingCount(remainingCount - 1);
                 }
             }
         } else {
