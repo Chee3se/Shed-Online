@@ -25,6 +25,10 @@ export default function Offline({ auth }: { auth: any }) {
     const [middlePile, setMiddlePile] = useState<Card[]>([]);
     const [usedPile, setUsedPile] = useState<Card[]>([]);
     const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(true);
+    const [gameOver, setGameOver] = useState<'player' | 'bot' | null>(null);
+    const [gameStarted, setGameStarted] = useState<boolean>(false);
+
+
 
     useEffect(() => {
         const initializeDeck = async () => {
@@ -62,6 +66,7 @@ export default function Offline({ auth }: { auth: any }) {
         };
         if (deckId) {
             dealCards();
+            setGameStarted(true);
         }
     }, [deckId]);
 
@@ -160,6 +165,33 @@ export default function Offline({ auth }: { auth: any }) {
         }
     }, [playerHandCards, playerUpCards, playerDownCards]);
 
+    useEffect(() => {
+        // Check for game over conditions AFTER every state changea
+        if(!gameStarted){
+            return;
+        }
+        if (
+            playerHandCards.length === 0 &&
+            playerUpCards.length === 0 &&
+            playerDownCards.length === 0
+        ) {
+            setGameOver('player');
+        } else if (
+            botHandCards.length === 0 &&
+            botUpCards.length === 0 &&
+            botDownCards.length === 0
+        ) {
+            setGameOver('bot');
+        }
+    }, [
+        playerHandCards,
+        playerUpCards,
+        playerDownCards,
+        botHandCards,
+        botUpCards,
+        botDownCards
+    ]);
+
     const isValidMove = (card: Card) => {
         if (card.value === '6' || card.value === '10') {
             return true;
@@ -168,9 +200,36 @@ export default function Offline({ auth }: { auth: any }) {
         return !topCard || getCardValue(card) >= getCardValue(topCard);
     };
 
+    // Game over renderer
+    const renderGameOver = () => {
+        if (!gameOver) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-lg shadow-xl text-center">
+                    <h2 className="text-3xl font-bold mb-4">
+                        {gameOver === 'player' ? 'Congratulations! You Won!' : 'Game Over! Bot Wins!'}
+                    </h2>
+                    <p className="text-xl mb-6">
+                        {gameOver === 'player'
+                            ? 'You successfully got rid of all your cards!'
+                            : 'The bot cleared all of its cards before you.'}
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition"
+                    >
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <Layout auth={auth}>
             <Head title="Offline" />
+            {renderGameOver()}
             <div className="flex flex-col items-center gap-5 pt-12">
                 <OpponentCards handCards={botHandCards} downCards={botDownCards} upCards={botUpCards} />
                 <div className="flex items-center gap-6">
@@ -178,7 +237,13 @@ export default function Offline({ auth }: { auth: any }) {
                     <MiddlePile middlePile={middlePile} />
                     <UsedPile usedPile={usedPile} />
                 </div>
-                <MyCards handCards={playerHandCards} downCards={playerDownCards} upCards={playerUpCards} handleCardPlacement={playerMove} isValidMove={isValidMove} />
+                <MyCards
+                    handCards={playerHandCards}
+                    downCards={playerDownCards}
+                    upCards={playerUpCards}
+                    handleCardPlacement={playerMove}
+                    isValidMove={isValidMove}
+                />
             </div>
         </Layout>
     );
