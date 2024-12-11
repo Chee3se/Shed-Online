@@ -25,5 +25,9 @@
         "tailwindcss": "^3.2.1",
         "typescript": "^5.0.2",
         "vite": "^5.0"
+    },
+    "dependencies": {
+        "react-dnd": "^16.0.1",
+        "react-dnd-html5-backend": "^16.0.1"
     }
 }

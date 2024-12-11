@@ -28,6 +28,7 @@ const MiddlePile: React.FC<MiddlePileProps> = ({ middlePile }) => {
                         left: getRandomOffset(),
                         transform: getRandomRotation()
                     }}
+                    cardType="middle"
                 />
             ))}
         </div>

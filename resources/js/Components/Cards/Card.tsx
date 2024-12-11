@@ -6,17 +6,24 @@ interface CardProps {
     className?: string;
     style?: React.CSSProperties;
     onClick?: () => void;
+    isValidMove?: boolean;
+    cardType: 'down' | 'up' | 'hand' | 'middle' | 'used';
+    hovered?: boolean;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-const Card: React.FC<CardProps> = ({ card, className, style, onClick }) => {
+const Card: React.FC<CardProps> = ({ card, className, style, onClick, isValidMove, cardType, hovered, onMouseEnter, onMouseLeave }) => {
     return (
-        <img
-            src={card.images.png}
-            alt={card.code}
-            className={`absolute w-24 h-36 ${className}`}
+        <div
+            className={`card ${className} ${hovered && cardType === 'hand' ? 'bg-blue-500' : ''} ${(isValidMove && cardType === 'hand') ? (hovered ? 'bg-blue-600' : 'bg-green-600') : ''} bg-opacity-30 rounded-xl absolute w-28 p-1.5`}
             style={style}
             onClick={onClick}
-        />
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+        >
+            <img src={card.images.png} alt={card.code} />
+        </div>
     );
 };
 

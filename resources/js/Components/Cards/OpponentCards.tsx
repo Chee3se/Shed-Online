@@ -9,13 +9,24 @@ interface OpponentCardsProps {
 }
 
 const OpponentCards: React.FC<OpponentCardsProps> = ({ handCards, downCards, upCards }) => {
+    const getCardStyle = (index: number, total: number) => {
+        const angle = total > 3 ? 20 / total : 10;
+        const offset = total > 3 ? 150 / total : 50;
+        const rotation = (index - (total - 1) / 2) * angle;
+        const translation = (index - (total - 1) / 2) * -offset;
+        return {
+            transform: `rotate(${rotation}deg) translateX(${translation}px)`,
+            margin: '0 5px',
+        };
+    };
+
     return (
         <div className="flex flex-col items-center gap-2 rotate-180">
             <div className="flex gap-2">
                 {downCards.map((card, index) => (
                     <div key={index} className="relative w-24 h-36">
-                        <Card card={{ code: 'back', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }} />
-                        <Card card={upCards[index]} className="top-5" />
+                        <Card card={{ code: 'back', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }} cardType="down" />
+                        <Card card={upCards[index]} className="top-5" cardType="up" />
                     </div>
                 ))}
             </div>
@@ -24,8 +35,9 @@ const OpponentCards: React.FC<OpponentCardsProps> = ({ handCards, downCards, upC
                     <Card
                         key={card.code}
                         card={{ code: 'back', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }}
-                        className={`transform ${index === 0 ? 'rotate-12 translate-x-4 -translate-y-2' : index === 1 ? 'rotate-0' : '-rotate-12 -translate-x-4 -translate-y-2'}`}
-                        style={{ left: `${index * 100}px` }}
+                        className="absolute"
+                        style={getCardStyle(index, handCards.length)}
+                        cardType="hand"
                     />
                 ))}
             </div>
