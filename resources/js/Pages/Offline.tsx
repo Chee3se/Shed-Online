@@ -35,15 +35,16 @@ export default function Offline({ auth }: { auth: any }) {
         initializeDeck().catch(console.error);
     }, []);
 
+    const drawCards = async (count: number) => {
+        if (deckId) {
+            const response = await axios.get<DrawResponse>(`${DECK_API_BASE_URL}/${deckId}/draw/?count=${count}`);
+            setRemainingCount(response.data.remaining);
+            return response.data.cards;
+        }
+        return [];
+    };
+
     useEffect(() => {
-        const drawCards = async (count: number) => {
-            if (deckId) {
-                const response = await axios.get<DrawResponse>(`${DECK_API_BASE_URL}/${deckId}/draw/?count=${count}`);
-                setRemainingCount(response.data.remaining);
-                return response.data.cards;
-            }
-            return [];
-        };
         const dealCards = async () => {
             const playerDown = await drawCards(3);
             const playerUp = await drawCards(3);
@@ -64,7 +65,7 @@ export default function Offline({ auth }: { auth: any }) {
         }
     }, [deckId]);
 
-    const handleCardPlacement = (card: Card, player: 'player' | 'bot') => {
+    const handleCardPlacement = async (card: Card, player: 'player' | 'bot') => {
         const topCard = middlePile[middlePile.length - 1];
         const isSpecialCard = card.value === '6' || card.value === '10';
 
@@ -90,6 +91,13 @@ export default function Offline({ auth }: { auth: any }) {
                 }
                 if (card.value !== '10') {
                     setIsPlayerTurn(false);
+                }
+
+                // Draw one more card into the player's hand if there are cards remaining
+                if (remainingCount > 0 && playerHandCards.length <= 3) {
+                    const cards = await drawCards(1);
+                    setPlayerHandCards(prevHandCards => [...prevHandCards, ...cards]);
+                    setRemainingCount(remainingCount - 1);
                 }
             } else {
                 updateCards(botHandCards, setBotHandCards);
