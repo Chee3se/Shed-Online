@@ -100,8 +100,23 @@ export default function Offline({ auth }: { auth: any }) {
                     setRemainingCount(remainingCount - 1);
                 }
             } else {
-                updateCards(botHandCards, setBotHandCards);
-                setIsPlayerTurn(true);
+                if (botHandCards.includes(card)) {
+                    updateCards(botHandCards, setBotHandCards);
+                } else if (botUpCards.includes(card) && botHandCards.length === 0) {
+                    updateCards(botUpCards, setBotUpCards);
+                } else if (botDownCards.includes(card) && botHandCards.length === 0 && botUpCards.length === 0) {
+                    updateCards(botDownCards, setBotDownCards);
+                }
+                if (card.value !== '10') {
+                    setIsPlayerTurn(true);
+                }
+
+                // Draw one more card into the player's hand if there are cards remaining
+                if (remainingCount > 0 && botHandCards.length <= 3) {
+                    const cards = await drawCards(1);
+                    setBotHandCards(prevHandCards => [...prevHandCards, ...cards]);
+                    setRemainingCount(remainingCount - 1);
+                }
             }
         } else {
             // Handle invalid move
@@ -126,7 +141,7 @@ export default function Offline({ auth }: { auth: any }) {
                 const validUpCard = botUpCards.find(card => isValidMove(card));
                 if (validCard) {
                     handleCardPlacement(validCard, 'bot');
-                } else if (validUpCard) {
+                } else if (botHandCards.length === 0 && validUpCard) {
                     handleCardPlacement(validUpCard, 'bot');
                 } else {
                     // Bot picks up the middle pile if no valid move
