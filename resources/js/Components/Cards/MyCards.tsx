@@ -14,7 +14,7 @@ const MyCards: React.FC<MyCardsProps> = ({ handCards, downCards, upCards, handle
     const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
     const getCardStyle = (index: number, total: number) => ({
-        transform: `${ total < 10 ? `rotate(${(index - (total - 1) / 2) * (total > 3 ? 20 / total : 10)}deg) translateX(${(index - (total - 1) / 2) * (total > 3 ? 150 / total : 50)}px)` : `translateX(${(index - (total - 1) / 2) * (total > 20 ? 300 / total : 50)}px)`}`,
+        transform: `${ total < 10 ? `rotate(${(index - (total - 1) / 2) * (total > 3 ? 20 / total : 10)}deg) translateX(${(index - (total - 1) / 2) * (total > 3 ? 150 / total : 50)}px)` : `translateX(${(index - (total - 1) / 2) * (30)}px)`}`,
         margin: '0 5px',
     });
 
