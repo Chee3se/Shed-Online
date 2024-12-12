@@ -57,6 +57,8 @@ export default function Offline({ auth }: { auth: any }) {
             const botUp = await drawCards(3);
             const botHand = await drawCards(3);
 
+            const discardedCards = await drawCards(30);
+
             setPlayerDownCards(playerDown);
             setPlayerUpCards(playerUp);
             setPlayerHandCards(playerHand);
@@ -79,7 +81,14 @@ export default function Offline({ auth }: { auth: any }) {
                 setUsedPile([...usedPile, ...middlePile, card]); // Move middle pile to used pile
                 setMiddlePile([]); // Clear the middle pile for card 10
             } else {
-                setMiddlePile([...middlePile, card]);
+                // Add random offsets and rotation to the card
+                const updatedCard = {
+                    ...card,
+                    offsetX: Math.random() * 10 - 5, // Random value between -5 and 5
+                    offsetY: Math.random() * 10 - 5, // Random value between -5 and 5
+                    rotation: Math.random() * 20 - 10 // Random value between -10 and 10 degrees
+                };
+                setMiddlePile([...middlePile, updatedCard]);
             }
 
             const updateCards = (cards: Card[], setCards: React.Dispatch<React.SetStateAction<Card[]>>) => {
@@ -141,11 +150,8 @@ export default function Offline({ auth }: { auth: any }) {
         if (!isPlayerTurn) {
             const botMove = () => {
                 const validCard = botHandCards.find(card => isValidMove(card));
-                const validUpCard = botUpCards.find(card => isValidMove(card));
                 if (validCard) {
                     handleCardPlacement(validCard, 'bot');
-                } else if (botHandCards.length === 0 && validUpCard) {
-                    handleCardPlacement(validUpCard, 'bot');
                 } else {
                     // Bot picks up the middle pile if no valid move
                     setBotHandCards([...botHandCards, ...middlePile]);

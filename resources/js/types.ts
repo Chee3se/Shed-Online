@@ -1,11 +1,15 @@
 export interface Card {
     code: string;
+    image: string;
     images: {
         svg: string;
         png: string;
     };
     value: string;
     suit: string;
+    offsetX?: number;
+    offsetY?: number;
+    rotation?: number;
 }
 
 export interface DeckResponse {
