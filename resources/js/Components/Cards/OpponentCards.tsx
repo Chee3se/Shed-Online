@@ -25,8 +25,10 @@ const OpponentCards: React.FC<OpponentCardsProps> = ({ handCards, downCards, upC
             <div className="flex gap-2">
                 {downCards.map((card, index) => (
                     <div key={index} className="relative w-24 h-36">
-                        <Card card={{ code: 'back', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }} cardType="down" />
-                        <Card card={upCards[index]} className="top-5" cardType="up" />
+                        <Card card={{ code: 'back', image: 'https://deckofcardsapi.com/static/img/back.png', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }} cardType="down" />
+                        {upCards[index] && (
+                            <Card card={upCards[index]} className="top-5" cardType="up" />
+                        )}
                     </div>
                 ))}
             </div>
@@ -34,7 +36,7 @@ const OpponentCards: React.FC<OpponentCardsProps> = ({ handCards, downCards, upC
                 {handCards.map((card, index) => (
                     <Card
                         key={card.code}
-                        card={{ code: 'back', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }}
+                        card={{ code: 'back', image: 'https://deckofcardsapi.com/static/img/back.png', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }}
                         className="absolute"
                         style={getCardStyle(index, handCards.length)}
                         cardType="hand"

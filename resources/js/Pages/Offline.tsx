@@ -58,6 +58,8 @@ export default function Offline({ auth }: { auth: any }) {
             const botUp = await drawCards(3);
             const botHand = await drawCards(3);
 
+            const discardedCards = await drawCards(30);
+
             setPlayerDownCards(playerDown);
             setPlayerUpCards(playerUp);
             setPlayerHandCards(playerHand);
@@ -69,7 +71,6 @@ export default function Offline({ auth }: { auth: any }) {
             setIsLoading(false);
         };
         if (deckId) {
-            const throwCards = drawCards(30);
             dealCards();
         }
     }, [deckId]);
@@ -117,16 +118,16 @@ export default function Offline({ auth }: { auth: any }) {
             } else {
                 if (botHandCards.includes(card)) {
                     updateCards(botHandCards, setBotHandCards);
-                } else if (botUpCards.includes(card) && botHandCards.length === 0) {
+                } else if (botUpCards.includes(card)) {
                     updateCards(botUpCards, setBotUpCards);
-                } else if (botDownCards.includes(card) && botHandCards.length === 0 && botUpCards.length === 0) {
+                } else if (botDownCards.includes(card)) {
                     updateCards(botDownCards, setBotDownCards);
                 }
                 if (card.value !== '10') {
                     setIsPlayerTurn(true);
                 }
 
-                // Draw one more card into the player's hand if there are cards remaining
+                // Draw one more card into the bot's hand if there are cards remaining
                 if (remainingCount > 0 && botHandCards.length <= 3) {
                     const cards = await drawCards(1);
                     setBotHandCards(prevHandCards => [...prevHandCards, ...cards]);
@@ -152,8 +153,15 @@ export default function Offline({ auth }: { auth: any }) {
         if (!isPlayerTurn) {
             const botMove = () => {
                 const validCard = botHandCards.find(card => isValidMove(card));
+                const validUpCard = botUpCards.find(card => isValidMove(card));
+                const validDownCard = botDownCards.find(card => isValidMove(card));
+
                 if (validCard) {
                     handleCardPlacement(validCard, 'bot');
+                } else if (validUpCard && botHandCards.length === 0) {
+                    handleCardPlacement(validUpCard, 'bot');
+                } else if (validDownCard && botHandCards.length === 0 && botUpCards.length === 0) {
+                    handleCardPlacement(validDownCard, 'bot');
                 } else {
                     // Bot picks up the middle pile if no valid move
                     setBotHandCards([...botHandCards, ...middlePile]);
@@ -163,7 +171,7 @@ export default function Offline({ auth }: { auth: any }) {
             };
             setTimeout(botMove, 1000); // Simulate bot thinking time
         }
-    }, [isPlayerTurn, botHandCards, middlePile]);
+    }, [isPlayerTurn, botHandCards, botUpCards, botDownCards, middlePile]);
 
     useEffect(() => {
         if (playerHandCards.length === 0 && playerUpCards.length === 0 && playerDownCards.length > 0) {
