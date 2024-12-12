@@ -151,65 +151,19 @@ export default function Offline({ auth }: { auth: any }) {
     useEffect(() => {
         if (!isPlayerTurn) {
             const botMove = () => {
-                // Prioritize finding a valid card to play
-                let validCard: Card | undefined;
-                let cardSource: 'hand' | 'up' | 'down' | null = null;
-
-                // First, check hand cards
-                if (botHandCards.length > 0) {
-                    validCard = botHandCards.find(card => isValidMove(card));
-                    if (validCard) cardSource = 'hand';
-                }
-
-                // If no valid card in hand, check up cards
-                if (!validCard && botUpCards.length > 0) {
-                    validCard = botUpCards.find(card => isValidMove(card));
-                    if (validCard) cardSource = 'up';
-                }
-
-                // If no valid card in up cards, check down cards when hand and up cards are empty
-                if (!validCard && botHandCards.length === 0 && botUpCards.length === 0 && botDownCards.length > 0) {
-                    validCard = botDownCards[0];
-                    cardSource = 'down';
-                }
-
-                // Perform the move
+                const validCard = botHandCards.find(card => isValidMove(card));
                 if (validCard) {
-                    if (cardSource === 'hand') {
-                        handleCardPlacement(validCard, 'bot');
-                    } else if (cardSource === 'up') {
-                        handleCardPlacement(validCard, 'bot');
-                    } else if (cardSource === 'down') {
-                        // Special handling for down cards
-                        const updatedDownCards = [...botDownCards];
-                        updatedDownCards.splice(0, 1);
-                        setBotDownCards(updatedDownCards);
-
-                        // Add the top down card to hand temporarily
-                        const updatedBotHand = [...botHandCards, validCard];
-                        setBotHandCards(updatedBotHand);
-
-                        // Attempt to play the card
-                        if (isValidMove(validCard)) {
-                            handleCardPlacement(validCard, 'bot');
-                        } else {
-                            // If can't play, pick up middle pile
-                            setBotHandCards([...updatedBotHand, ...middlePile]);
-                            setMiddlePile([]);
-                            setIsPlayerTurn(true);
-                        }
-                    }
+                    handleCardPlacement(validCard, 'bot');
                 } else {
-                    // No valid card to play, pick up middle pile
+                    // Bot picks up the middle pile if no valid move
                     setBotHandCards([...botHandCards, ...middlePile]);
                     setMiddlePile([]);
                     setIsPlayerTurn(true);
                 }
             };
-
             setTimeout(botMove, 1000); // Simulate bot thinking time
         }
-    }, [isPlayerTurn, botHandCards, botUpCards, botDownCards, middlePile]);
+    }, [isPlayerTurn, botHandCards, middlePile]);
 
     useEffect(() => {
         if (playerHandCards.length === 0 && playerUpCards.length === 0 && playerDownCards.length > 0) {
