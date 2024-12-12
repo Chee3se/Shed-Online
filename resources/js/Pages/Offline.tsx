@@ -9,6 +9,7 @@ import RemainingPile from '@/Components/Cards/RemainingPile';
 import UsedPile from '@/Components/Cards/UsedPile';
 import { Card, DeckResponse, DrawResponse } from '@/types';
 import { getCardValue } from '@/utils';
+import Spinner from "@/Components/Spinner/Spinner";
 
 const DECK_API_BASE_URL = 'https://deckofcardsapi.com/api/deck';
 const DECK_COUNT = 1;
@@ -27,8 +28,7 @@ export default function Offline({ auth }: { auth: any }) {
     const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(true);
     const [gameOver, setGameOver] = useState<'player' | 'bot' | null>(null);
     const [gameStarted, setGameStarted] = useState<boolean>(false);
-
-
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const initializeDeck = async () => {
@@ -50,6 +50,7 @@ export default function Offline({ auth }: { auth: any }) {
 
     useEffect(() => {
         const dealCards = async () => {
+            setIsLoading(true);
             const playerDown = await drawCards(3);
             const playerUp = await drawCards(3);
             const playerHand = await drawCards(3);
@@ -57,18 +58,19 @@ export default function Offline({ auth }: { auth: any }) {
             const botUp = await drawCards(3);
             const botHand = await drawCards(3);
 
-            const discardedCards = await drawCards(30);
-
             setPlayerDownCards(playerDown);
             setPlayerUpCards(playerUp);
             setPlayerHandCards(playerHand);
             setBotDownCards(botDown);
             setBotUpCards(botUp);
             setBotHandCards(botHand);
+
+            setGameStarted(true);
+            setIsLoading(false);
         };
         if (deckId) {
+            const throwCards = drawCards(30);
             dealCards();
-            setGameStarted(true);
         }
     }, [deckId]);
 
@@ -149,19 +151,65 @@ export default function Offline({ auth }: { auth: any }) {
     useEffect(() => {
         if (!isPlayerTurn) {
             const botMove = () => {
-                const validCard = botHandCards.find(card => isValidMove(card));
+                // Prioritize finding a valid card to play
+                let validCard: Card | undefined;
+                let cardSource: 'hand' | 'up' | 'down' | null = null;
+
+                // First, check hand cards
+                if (botHandCards.length > 0) {
+                    validCard = botHandCards.find(card => isValidMove(card));
+                    if (validCard) cardSource = 'hand';
+                }
+
+                // If no valid card in hand, check up cards
+                if (!validCard && botUpCards.length > 0) {
+                    validCard = botUpCards.find(card => isValidMove(card));
+                    if (validCard) cardSource = 'up';
+                }
+
+                // If no valid card in up cards, check down cards when hand and up cards are empty
+                if (!validCard && botHandCards.length === 0 && botUpCards.length === 0 && botDownCards.length > 0) {
+                    validCard = botDownCards[0];
+                    cardSource = 'down';
+                }
+
+                // Perform the move
                 if (validCard) {
-                    handleCardPlacement(validCard, 'bot');
+                    if (cardSource === 'hand') {
+                        handleCardPlacement(validCard, 'bot');
+                    } else if (cardSource === 'up') {
+                        handleCardPlacement(validCard, 'bot');
+                    } else if (cardSource === 'down') {
+                        // Special handling for down cards
+                        const updatedDownCards = [...botDownCards];
+                        updatedDownCards.splice(0, 1);
+                        setBotDownCards(updatedDownCards);
+
+                        // Add the top down card to hand temporarily
+                        const updatedBotHand = [...botHandCards, validCard];
+                        setBotHandCards(updatedBotHand);
+
+                        // Attempt to play the card
+                        if (isValidMove(validCard)) {
+                            handleCardPlacement(validCard, 'bot');
+                        } else {
+                            // If can't play, pick up middle pile
+                            setBotHandCards([...updatedBotHand, ...middlePile]);
+                            setMiddlePile([]);
+                            setIsPlayerTurn(true);
+                        }
+                    }
                 } else {
-                    // Bot picks up the middle pile if no valid move
+                    // No valid card to play, pick up middle pile
                     setBotHandCards([...botHandCards, ...middlePile]);
                     setMiddlePile([]);
                     setIsPlayerTurn(true);
                 }
             };
+
             setTimeout(botMove, 1000); // Simulate bot thinking time
         }
-    }, [isPlayerTurn, botHandCards, middlePile]);
+    }, [isPlayerTurn, botHandCards, botUpCards, botDownCards, middlePile]);
 
     useEffect(() => {
         if (playerHandCards.length === 0 && playerUpCards.length === 0 && playerDownCards.length > 0) {
@@ -209,7 +257,6 @@ export default function Offline({ auth }: { auth: any }) {
     // Game over renderer
     const renderGameOver = () => {
         if (!gameOver) return null;
-
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-8 rounded-lg shadow-xl text-center">
@@ -235,22 +282,29 @@ export default function Offline({ auth }: { auth: any }) {
     return (
         <Layout auth={auth}>
             <Head title="Offline" />
-            {renderGameOver()}
-            <div className="flex flex-col items-center gap-5 pt-12">
-                <OpponentCards handCards={botHandCards} downCards={botDownCards} upCards={botUpCards} />
-                <div className="flex items-center gap-6">
-                    <RemainingPile remainingCount={remainingCount} />
-                    <MiddlePile middlePile={middlePile} />
-                    <UsedPile usedPile={usedPile} />
+            {isLoading && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <Spinner />
                 </div>
-                <MyCards
-                    handCards={playerHandCards}
-                    downCards={playerDownCards}
-                    upCards={playerUpCards}
-                    handleCardPlacement={playerMove}
-                    isValidMove={isValidMove}
-                />
-            </div>
+            )}
+            {renderGameOver()}
+            {!isLoading && (
+                <div className="flex flex-col items-center gap-5 pt-12">
+                    <OpponentCards handCards={botHandCards} downCards={botDownCards} upCards={botUpCards} />
+                    <div className="flex items-center gap-6">
+                        <RemainingPile remainingCount={remainingCount} />
+                        <MiddlePile middlePile={middlePile} />
+                        <UsedPile usedPile={usedPile} />
+                    </div>
+                    <MyCards
+                        handCards={playerHandCards}
+                        downCards={playerDownCards}
+                        upCards={playerUpCards}
+                        handleCardPlacement={playerMove}
+                        isValidMove={isValidMove}
+                    />
+                </div>
+            )}
         </Layout>
     );
 }
