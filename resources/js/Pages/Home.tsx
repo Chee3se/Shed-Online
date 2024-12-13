@@ -41,13 +41,15 @@ export default function Home({ auth }: { auth: any }) {
                             <li>3 Cards in Hand are used to play the game itself. (You must always have 3 cards in hand
                                 while the deck allows it.)
                             </li>
-                            <li>If the last card in hand is a Jack, and there is also a Jack among the face-up cards, you can confidently play it on the table.</li>
+                            <li>If the last card in hand is a Jack, and there is also a Jack among the face-up cards,
+                                you can confidently play it on the table.
+                            </li>
 
                         </ul>
                     </section>
 
                     <section>
-                    <h3 className="text-xl font-semibold mb-2">Special cards</h3>
+                        <h3 className="text-xl font-semibold mb-2">Special cards</h3>
                         <p>Players take turns playing cards. You can play:</p>
                         <ul className="list-disc pl-5">
                             <li>A card equal to or higher than the previous card</li>
@@ -56,10 +58,17 @@ export default function Home({ auth }: { auth: any }) {
                         </ul>
                     </section>
 
+                    <section>
+                        <h3 className="text-xl font-semibold mb-2">Controls</h3>
+                        <p>To throw a multiple cards, hold "shift" button and click on the card, they will show do you have a same cards and then click again on card to throw.</p>
+
+                    </section>
+
 
                     <section>
                         <h3 className="text-xl font-semibold mb-2">Winning</h3>
-                        <p>The first player to get rid of all cards wins. The last player with cards is the "Shithead"!</p>
+                        <p>The first player to get rid of all cards wins. The last player with cards is the
+                            "Shithead"!</p>
                     </section>
                 </div>
             </div>
@@ -68,11 +77,12 @@ export default function Home({ auth }: { auth: any }) {
 
     return (
         <Layout auth={auth}>
-            <Head title="Shed - Card Game" />
+            <Head title="Shed - Card Game"/>
 
-            {isRulesModalOpen && <RulesModal />}
+            {isRulesModalOpen && <RulesModal/>}
 
-            <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4 py-8">
+            <div
+                className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4 py-8">
                 <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl overflow-hidden">
                     <div className="p-8 text-center">
                         <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
