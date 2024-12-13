@@ -75,72 +75,92 @@ export default function Offline({ auth }: { auth: any }) {
         }
     }, [deckId]);
 
-    const handleCardPlacement = async (card: Card, player: 'player' | 'bot') => {
-        const topCard = middlePile[middlePile.length - 1];
-        const isSpecialCard = card.value === '6' || card.value === '10';
+    const handleCardPlacement = async (cards: Card | Card[], player: 'player' | 'bot') => {
+        // Ensure we're always working with an array
+        const cardArray = Array.isArray(cards) ? cards : [cards];
 
-        if (!topCard || getCardValue(card) >= getCardValue(topCard) || isSpecialCard) {
-            if (card.value === '10') {
-                setUsedPile([...usedPile, ...middlePile, card]); // Move middle pile to used pile
-                setMiddlePile([]); // Clear the middle pile for card 10
+        // Validate if all cards have the same value
+        const sameValue = cardArray.every(card => card.value === cardArray[0].value);
+        if (!sameValue) {
+            console.error('Cards must have the same value for multiple placement');
+            return;
+        }
+
+        const topCard = middlePile[middlePile.length - 1];
+        const isSpecialCard = cardArray[0].value === '6' || cardArray[0].value === '10';
+
+        if (!topCard || getCardValue(cardArray[0]) >= getCardValue(topCard) || isSpecialCard) {
+            if (cardArray[0].value === '10') {
+                // Clear middle pile for 10
+                setUsedPile([...usedPile, ...middlePile, ...cardArray]);
+                setMiddlePile([]);
             } else {
-                // Add random offsets and rotation to the card
-                const updatedCard = {
+                // Add cards to middle pile with random offsets
+                const updatedCards = cardArray.map(card => ({
                     ...card,
-                    offsetX: Math.random() * 10 - 5, // Random value between -5 and 5
-                    offsetY: Math.random() * 10 - 5, // Random value between -5 and 5
-                    rotation: Math.random() * 20 - 10 // Random value between -10 and 10 degrees
-                };
-                setMiddlePile([...middlePile, updatedCard]);
+                    offsetX: Math.random() * 10 - 5,
+                    offsetY: Math.random() * 10 - 5,
+                    rotation: Math.random() * 20 - 10
+                }));
+                setMiddlePile([...middlePile, ...updatedCards]);
             }
 
+            // Remove placed cards from appropriate location
             const updateCards = (cards: Card[], setCards: React.Dispatch<React.SetStateAction<Card[]>>) => {
-                setCards(cards.filter(c => c.code !== card.code));
+                const remainingCards = cards.filter(c => !cardArray.some(placedCard => placedCard.code === c.code));
+                setCards(remainingCards);
             };
 
             if (player === 'player') {
-                if (playerHandCards.includes(card)) {
+                if (cardArray.every(card => playerHandCards.some(c => c.code === card.code))) {
                     updateCards(playerHandCards, setPlayerHandCards);
-                } else if (playerUpCards.includes(card) && playerHandCards.length === 0) {
+                } else if (cardArray.every(card => playerUpCards.some(c => c.code === card.code)) && playerHandCards.length === 0) {
                     updateCards(playerUpCards, setPlayerUpCards);
-                } else if (playerDownCards.includes(card) && playerHandCards.length === 0 && playerUpCards.length === 0) {
+                } else if (cardArray.every(card => playerDownCards.some(c => c.code === card.code)) && playerHandCards.length === 0 && playerUpCards.length === 0) {
                     updateCards(playerDownCards, setPlayerDownCards);
                 }
-                if (card.value !== '10') {
+
+                // Draw replacement cards
+                if (cardArray[0].value !== '10') {
                     setIsPlayerTurn(false);
                 }
 
-                // Draw one more card into the player's hand if there are cards remaining
+                // Draw cards to maintain hand size
                 if (remainingCount > 0 && playerHandCards.length <= 3) {
-                    const cards = await drawCards(1);
-                    setPlayerHandCards(prevHandCards => [...prevHandCards, ...cards]);
+                    const newCards = await drawCards(cardArray.length);
+                    setPlayerHandCards(prevHandCards => [...prevHandCards, ...newCards]);
                 }
             } else {
-                if (botHandCards.includes(card)) {
+                // Similar logic for bot
+                if (cardArray.every(card => botHandCards.some(c => c.code === card.code))) {
                     updateCards(botHandCards, setBotHandCards);
-                } else if (botUpCards.includes(card)) {
+                } else if (cardArray.every(card => botUpCards.some(c => c.code === card.code))) {
                     updateCards(botUpCards, setBotUpCards);
-                } else if (botDownCards.includes(card)) {
+                } else if (cardArray.every(card => botDownCards.some(c => c.code === card.code))) {
                     updateCards(botDownCards, setBotDownCards);
                 }
-                if (card.value !== '10') {
+
+                if (cardArray[0].value !== '10') {
                     setIsPlayerTurn(true);
                 }
 
-                // Draw one more card into the bot's hand if there are cards remaining
+                // Draw cards to maintain hand size
                 if (remainingCount > 0 && botHandCards.length <= 3) {
-                    const cards = await drawCards(1);
-                    setBotHandCards(prevHandCards => [...prevHandCards, ...cards]);
+                    const newCards = await drawCards(cardArray.length);
+                    setBotHandCards(prevHandCards => [...prevHandCards, ...newCards]);
                 }
             }
         } else {
-            // Handle invalid move
+            // Invalid move handling remains the same
         }
     };
 
-    const playerMove = (card: Card) => {
-        if (isValidMove(card)) {
-            handleCardPlacement(card, 'player');
+    const playerMove = (cards: Card | Card[]) => {
+        const cardArray = Array.isArray(cards) ? cards : [cards];
+        const sameValue = cardArray.every(card => card.value === cardArray[0].value);
+
+        if (cardArray.every(card => isValidMove(card))) {
+            handleCardPlacement(cardArray, 'player');
         } else {
             // Player picks up the middle pile if no valid move
             setPlayerHandCards([...playerHandCards, ...middlePile]);
