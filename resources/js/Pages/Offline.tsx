@@ -58,8 +58,6 @@ export default function Offline({ auth }: { auth: any }) {
             const botUp = await drawCards(3);
             const botHand = await drawCards(3);
 
-            const discardedCards = await drawCards(30);
-
             setPlayerDownCards(playerDown);
             setPlayerUpCards(playerUp);
             setPlayerHandCards(playerHand);
