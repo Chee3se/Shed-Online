@@ -27,6 +27,15 @@ const MyCards: React.FC<MyCardsProps> = ({
             if (e.shiftKey) {
                 setIsShiftPressed(true);
             }
+
+            // Handle space key for placing selected cards
+            if (e.code === 'Space' && isShiftPressed && selectedCards.length > 0) {
+                e.preventDefault(); // Prevent default space key behavior
+                if (selectedCards.every(card => isValidMove(card))) {
+                    handleCardPlacement(selectedCards, 'player');
+                    setSelectedCards([]);
+                }
+            }
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
@@ -43,7 +52,7 @@ const MyCards: React.FC<MyCardsProps> = ({
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, []);
+    }, [isShiftPressed, selectedCards, isValidMove, handleCardPlacement]);
 
     const cardGroups = handCards.reduce((acc, card) => {
         if (!acc[card.value]) {
@@ -73,25 +82,24 @@ const MyCards: React.FC<MyCardsProps> = ({
 
     const handleCardClick = (card: CardType) => {
         if (isShiftPressed) {
-            const sameValueCards = cardGroups[card.value] || [];
-            const allSameSelected = sameValueCards.every(c => selectedCards.includes(c));
+            const isCardAlreadySelected = selectedCards.includes(card);
 
-            if (allSameSelected) {
-                setSelectedCards([]);
+            if (isCardAlreadySelected) {
+                // If the card is already selected, remove it
+                setSelectedCards(prevSelected =>
+                    prevSelected.filter(selectedCard => selectedCard !== card)
+                );
             } else {
-                setSelectedCards(sameValueCards);
+                // If the card is not selected, check if it matches the existing selection's value
+                const hasExistingSelection = selectedCards.length > 0;
+
+                if (!hasExistingSelection || selectedCards[0].value === card.value) {
+                    // Add the card to selected cards
+                    setSelectedCards(prevSelected => [...prevSelected, card]);
+                }
             }
         } else {
             handleCardPlacement(card, 'player');
-        }
-    };
-
-    const handleShiftCardPlacement = () => {
-        if (isShiftPressed && selectedCards.length > 0) {
-            if (selectedCards.every(card => isValidMove(card))) {
-                handleCardPlacement(selectedCards, 'player');
-                setSelectedCards([]);
-            }
         }
     };
 
@@ -100,7 +108,7 @@ const MyCards: React.FC<MyCardsProps> = ({
             <div className="">
                 {isShiftPressed && selectedCards.length > 0 && (
                     <MultiCardNotification
-                        message={`Press to place ${selectedCards.length} cards ${selectedCards[0].value}'s` || ''}
+                        message={`Press SPACE to place ${selectedCards.length} cards ${selectedCards[0].value}'s` || ''}
                         isVisible={true}
                     />
                 )}
@@ -128,10 +136,7 @@ const MyCards: React.FC<MyCardsProps> = ({
                     </div>
                 ))}
             </div>
-            <div
-                className="relative w-72 h-36 flex justify-center"
-                onClick={handleShiftCardPlacement}
-            >
+            <div className="relative w-72 h-36 flex justify-center">
                 {handCards.map((card, index) => (
                     <Card
                         key={card.code}

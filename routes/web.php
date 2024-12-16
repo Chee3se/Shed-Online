@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LobbyController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,11 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
+    Route::get('/lobby/create', [LobbyController::class, 'index'])->name('lobby.create');
+});
 
 Route::get('/singleplayer', function () {
     return Inertia::render('Offline');

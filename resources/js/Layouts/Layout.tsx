@@ -16,7 +16,9 @@ export default function Layout({ auth, children }: LayoutProps) {
 
                 <div className="hidden md:flex flex-row gap-6 items-center">
                     {auth?.user ? (
+
                         <>
+                            <Link href={route('lobby')}>Lobby</Link>
                             <Link href={route('profile.edit')}>Profile</Link>
                             <Link href={route('logout')} method="post">Logout</Link>
                         </>
