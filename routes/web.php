@@ -18,6 +18,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/lobbies/{lobby}/join', [LobbyController::class, 'join'])
         ->name('lobby.join')
         ->middleware(['auth']);
+    Route::post('/lobby/{lobby}/leave', [LobbyController::class, 'leave'])
+        ->name('lobby.leave')
+        ->middleware(['auth', 'verified']);
 });
 
 Route::get('/singleplayer', function () {

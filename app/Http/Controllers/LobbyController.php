@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\NewLobby;
+use App\Events\LobbyDeleted;
 use App\Jobs\CreateLobby;
 use App\Models\Lobby;
 use App\Models\User;
@@ -107,6 +108,41 @@ class LobbyController
 
         // Redirect to lobby show page
         return redirect()->route('lobby.show', $lobby->id);
+    }
+
+    public function leave(Lobby $lobby)
+    {
+        $user = Auth::user();
+
+        // Check if user is in the lobby
+        if (!$lobby->players()->where('user_id', $user->id)->exists()) {
+            return redirect()->route('lobby')->with('error', 'You are not in this lobby');
+        }
+
+        // If user is the owner, delete the entire lobby
+        if ($lobby->owner_id === $user->id) {
+            // Remove all players
+            $lobby->players()->detach();
+
+            // Delete the lobby
+            $lobby->delete();
+
+            // Broadcast lobby deletion
+            broadcast(new LobbyDeleted($lobby))->toOthers();
+
+            return redirect()->route('lobby')->with('success', 'Lobby deleted');
+        }
+
+        // If user is not the owner, just remove them from the lobby
+        $lobby->players()->detach($user->id);
+
+        // Decrement current players count
+        $lobby->decrement('current_players');
+
+        // Broadcast lobby update
+        broadcast(new LobbyUpdated($lobby))->toOthers();
+
+        return redirect()->route('lobby')->with('success', 'Left lobby');
     }
 
 }

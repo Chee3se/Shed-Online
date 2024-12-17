@@ -23,4 +23,12 @@ class Lobby extends Model
         return $this->belongsToMany(User::class, 'lobby_user', 'lobby_id', 'user_id');
     }
 
+    // Ensure players are detached when lobby is deleted
+    protected static function booted()
+    {
+        static::deleting(function ($lobby) {
+            $lobby->players()->detach();
+        });
+    }
+
 }
