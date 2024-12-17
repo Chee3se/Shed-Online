@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
 export default function Lobby({
                                   auth,
-                                  lobbies,
+                                  lobbies: initialLobbies,
                                   owners
                               }: {
     auth: any,
@@ -12,20 +12,19 @@ export default function Lobby({
     owners: { [key: number]: string }
 }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [lobbies, setLobbies] = useState(initialLobbies);
     const { post } = useForm();
 
-    const webSocketChannel = `lobbies`;
-
-    const connectWebSocket = () => {
-        window.Echo.channel(webSocketChannel)
-            .listen('NewLobby', async (event: any) => {
-                event.preventDefault()
-                console.log("new lobby got created!")
-            });
-    }
-
     useEffect(() => {
-        connectWebSocket();
+        const channel = window.Echo.channel('lobbies')
+            .listen('.new-lobby', (event: any) => {
+                console.log("New Lobby", event);
+                setLobbies((prevLobbies) => [...prevLobbies, event]);
+            });
+
+        return () => {
+            channel.stopListening('.new-lobby');
+        };
     }, []);
 
     // Filter lobbies based on search term
