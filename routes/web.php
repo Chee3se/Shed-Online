@@ -12,7 +12,9 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
-    Route::get('/lobby/create', [LobbyController::class, 'index'])->name('lobby.create');
+    Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
+    Route::post('/lobby/store', [LobbyController::class, 'store'])->name('lobby.store');
+    Route::get('/lobby/{lobby}', [LobbyController::class, 'show'])->name('lobby.show');
 });
 
 Route::get('/singleplayer', function () {

@@ -73,7 +73,6 @@ const MyCards: React.FC<MyCardsProps> = ({
             return {
                 ...baseStyle,
                 transform: `${baseStyle.transform} translateY(-30px)`,
-                zIndex: 10,
             };
         }
 

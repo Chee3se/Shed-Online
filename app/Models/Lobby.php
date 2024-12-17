@@ -14,4 +14,12 @@ class Lobby extends Model
         'max_players',
         'code'
     ];
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+    public function players()
+    {
+        return $this->belongsToMany(User::class, 'lobby_user', 'lobby_id', 'user_id');
+    }
 }
