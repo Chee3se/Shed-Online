@@ -19,7 +19,8 @@ export default function Lobby({
     const connectWebSocket = () => {
         window.Echo.channel(webSocketChannel)
             .listen('NewLobby', async (event: any) => {
-                console.log("new lobby")
+                event.preventDefault()
+                console.log("new lobby got created!")
             });
     }
 

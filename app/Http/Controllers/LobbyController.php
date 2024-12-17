@@ -62,9 +62,7 @@ class LobbyController
             'password' => $validatedData['is_public'] ? null : Hash::make($validatedData['password']),
             'code' => $lobbyCode,
         ]);
-
         CreateLobby::dispatch($lobby);
-
         // Automatically join the lobby
         $lobby->players()->attach(auth()->id());
 
