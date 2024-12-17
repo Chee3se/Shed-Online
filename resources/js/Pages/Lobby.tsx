@@ -1,35 +1,30 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
 export default function Lobby({
                                   auth,
-                                  lobbies,
-                                  owners,
-                                  currentUserLobby // New prop to indicate if user is already in a lobby
+                                  lobbies: initialLobbies,
+                                  owners
                               }: {
     auth: any,
     lobbies: any[],
-    owners: { [key: number]: string },
-    currentUserLobby: number | null
+    owners: { [key: number]: string }
 }) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [showRestrictionModal, setShowRestrictionModal] = useState(false);
-    const [restrictionMessage, setRestrictionMessage] = useState('');
+    const [lobbies, setLobbies] = useState(initialLobbies);
     const { post } = useForm();
 
-    const webSocketChannel = `lobbies`;
-
-    const connectWebSocket = () => {
-        window.Echo.channel(webSocketChannel)
-            .listen('NewLobby', async (event: any) => {
-                event.preventDefault()
-                console.log("new lobby got created!")
-            });
-    }
-
     useEffect(() => {
-        connectWebSocket();
+        const channel = window.Echo.channel('lobbies')
+            .listen('.new-lobby', (event: any) => {
+                console.log("New Lobby", event);
+                setLobbies((prevLobbies) => [...prevLobbies, event]);
+            });
+
+        return () => {
+            channel.stopListening('.new-lobby');
+        };
     }, []);
 
     // Filter lobbies based on search term
@@ -38,51 +33,12 @@ export default function Lobby({
     );
 
     const handleJoinLobby = (lobbyId: number) => {
-        // Check if user is already in a lobby
-        if (currentUserLobby) {
-            setRestrictionMessage('You are already in a lobby. Please leave your current lobby before joining a new one.');
-            setShowRestrictionModal(true);
-            return;
-        }
-
         post(route('lobby.join', lobbyId));
-    };
-
-    const handleCreateLobby = () => {
-        // Check if user is already in a lobby
-        if (currentUserLobby) {
-            setRestrictionMessage('You are already in a lobby. Please leave your current lobby before creating a new one.');
-            setShowRestrictionModal(true);
-            return;
-        }
-
-        // If not in a lobby, proceed to lobby creation page
-        window.location.href = route('lobby.create');
-    };
-
-    const closeModal = () => {
-        setShowRestrictionModal(false);
     };
 
     return (
         <Layout auth={auth}>
             <Head title="Game Lobbies"/>
-
-            {/* Restriction Modal */}
-            {showRestrictionModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Cannot Create/Join Lobby</h2>
-                        <p className="text-gray-600 mb-6">{restrictionMessage}</p>
-                        <button
-                            onClick={closeModal}
-                            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-                        >
-                            Understood
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4 py-8">
                 <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl overflow-hidden">
@@ -109,12 +65,12 @@ export default function Lobby({
 
                             {/* Create Lobby Button */}
                             <div className="mb-8 text-center">
-                                <button
-                                    onClick={handleCreateLobby}
+                                <Link
+                                    href={route('lobby.create')}
                                     className="inline-block bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
                                 >
                                     Create New Lobby
-                                </button>
+                                </Link>
                             </div>
                         </div>
 
