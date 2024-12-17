@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
@@ -13,6 +13,19 @@ export default function Lobby({
 }) {
     const [searchTerm, setSearchTerm] = useState('');
     const { post } = useForm();
+
+    const webSocketChannel = `lobbies`;
+
+    const connectWebSocket = () => {
+        window.Echo.channel(webSocketChannel)
+            .listen('NewLobby', async (event: any) => {
+                console.log("new lobby")
+            });
+    }
+
+    useEffect(() => {
+        connectWebSocket();
+    }, []);
 
     // Filter lobbies based on search term
     const filteredLobbies = lobbies.filter(lobby =>

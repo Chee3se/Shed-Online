@@ -40,3 +40,6 @@ php artisan key:generate
 ```bash
 composer run dev
 ```
+```bash
+php artisan reverb:start --debug
+```
