@@ -7,9 +7,11 @@ use App\Models\Lobby;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Events\LobbyUpdated;
 
 class LobbyController
 {
@@ -72,10 +74,38 @@ class LobbyController
 
     public function show(Lobby $lobby)
     {
-
         return Inertia::render('LobbyShow', [
-            'lobby' => $lobby
+            'lobby' => $lobby->load('players'), // Eager load players
+            'canJoin' => $lobby->current_players < $lobby->max_players,
+            'owners' => User::whereIn('id', [$lobby->owner_id])->pluck('name', 'id')
         ]);
+    }
+
+    public function join(Request $request, Lobby $lobby)
+    {
+        $user = Auth::user();
+
+        // Check if lobby is full
+        if ($lobby->current_players >= $lobby->max_players) {
+            return back()->with('error', 'Lobby is full');
+        }
+
+        // Check if user is already in the lobby
+        if ($lobby->players()->where('user_id', $user->id)->exists()) {
+            return redirect()->route('lobby.show', $lobby->id);
+        }
+
+        // Attach user to lobby
+        $lobby->players()->attach($user->id);
+
+        // Update current players count
+        $lobby->increment('current_players');
+
+        // Broadcast lobby update
+        broadcast(new LobbyUpdated($lobby))->toOthers();
+
+        // Redirect to lobby show page
+        return redirect()->route('lobby.show', $lobby->id);
     }
 
 }

@@ -114,12 +114,21 @@ export default function Lobby({
                                         </div>
 
                                         {lobby.current_players < lobby.max_players ? (
-                                            <button
-                                                onClick={() => handleJoinLobby(lobby.id)}
-                                                className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-                                            >
-                                                Join Lobby
-                                            </button>
+                                            auth.user.id === lobby.owner_id ? (
+                                                <Link
+                                                    href={route('lobby.show', lobby.id)}
+                                                    className="w-full block text-center bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+                                                >
+                                                    Return to Your Lobby
+                                                </Link>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleJoinLobby(lobby.id)}
+                                                    className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                                                >
+                                                    Join Lobby
+                                                </button>
+                                            )
                                         ) : (
                                             <button
                                                 disabled

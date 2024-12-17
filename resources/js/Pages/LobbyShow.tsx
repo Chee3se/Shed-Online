@@ -5,11 +5,13 @@ import Layout from '../Layouts/Layout';
 export default function LobbyShow({
                                       auth,
                                       lobby,
-                                      canJoin
+                                      canJoin,
+                                      owners
                                   }: {
     auth: any,
     lobby: any,
-    canJoin: boolean
+    canJoin: boolean,
+    owners: { [key: number]: string }
 }) {
     const { post } = useForm();
 
@@ -52,7 +54,7 @@ export default function LobbyShow({
                                     </span>
                                 </p>
                                 <p>
-                                    <strong>Created by:</strong> {lobby.owner?.name}
+                                    <strong>Created by:</strong> {owners[lobby.owner_id]}
                                 </p>
                                 <p>
                                     <strong>Players:</strong> {lobby.current_players} / {lobby.max_players}

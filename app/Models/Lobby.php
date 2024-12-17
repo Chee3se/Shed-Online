@@ -22,4 +22,5 @@ class Lobby extends Model
     {
         return $this->belongsToMany(User::class, 'lobby_user', 'lobby_id', 'user_id');
     }
+
 }
