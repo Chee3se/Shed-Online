@@ -30,7 +30,7 @@ class NewLobby
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('lobbies'),
+            new Channel('lobbies'),
         ];
     }
 }

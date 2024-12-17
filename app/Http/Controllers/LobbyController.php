@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\CreateLobby;
 use App\Models\Lobby;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -61,6 +62,8 @@ class LobbyController
             'password' => $validatedData['is_public'] ? null : Hash::make($validatedData['password']),
             'code' => $lobbyCode,
         ]);
+
+        CreateLobby::dispatch($lobby);
 
         // Automatically join the lobby
         $lobby->players()->attach(auth()->id());
