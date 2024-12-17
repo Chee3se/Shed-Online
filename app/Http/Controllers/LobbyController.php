@@ -71,12 +71,9 @@ class LobbyController
 
     public function show(Lobby $lobby)
     {
-        // Check if user is allowed to view the lobby
-        $this->authorize('view', $lobby);
 
         return Inertia::render('LobbyShow', [
-            'lobby' => $lobby->load('owner', 'players'),
-            'canJoin' => $lobby->canJoin(auth()->user()),
+            'lobby' => $lobby
         ]);
     }
 

@@ -52,7 +52,7 @@ export default function LobbyShow({
                                     </span>
                                 </p>
                                 <p>
-                                    <strong>Created by:</strong> {lobby.owner.name}
+                                    <strong>Created by:</strong> {lobby.owner?.name}
                                 </p>
                                 <p>
                                     <strong>Players:</strong> {lobby.current_players} / {lobby.max_players}
@@ -66,21 +66,25 @@ export default function LobbyShow({
                                 Players
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
-                                {lobby.players.map((player) => (
-                                    <div
-                                        key={player.id}
-                                        className="bg-white border rounded-lg p-4 flex items-center"
-                                    >
-                                        <div className="ml-3">
-                                            <p className="font-semibold">{player.name}</p>
-                                            {player.id === lobby.owner_id && (
-                                                <span className="text-xs text-gray-500">
-                                                    (Lobby Owner)
-                                                </span>
-                                            )}
+                                {lobby.players && lobby.players.length > 0 ? (
+                                    lobby.players.map((player) => (
+                                        <div
+                                            key={player.id}
+                                            className="bg-white border rounded-lg p-4 flex items-center"
+                                        >
+                                            <div className="ml-3">
+                                                <p className="font-semibold">{player.name}</p>
+                                                {player.id === lobby.owner_id && (
+                                                    <span className="text-xs text-gray-500">
+                        (Lobby Owner)
+                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500">No players in this lobby yet</p>
+                                )}
                             </div>
                         </div>
 
@@ -116,7 +120,7 @@ export default function LobbyShow({
                         {/* Back to Lobbies Link */}
                         <div className="mt-6 text-center">
                             <Link
-                                href={route('lobby.index')}
+                                href={route('lobby')}
                                 className="text-indigo-600 hover:underline"
                             >
                                 Back to Lobbies
