@@ -5,13 +5,17 @@ import Layout from '../Layouts/Layout';
 export default function Lobby({
                                   auth,
                                   lobbies,
-                                  owners
+                                  owners,
+                                  currentUserLobby // New prop to indicate if user is already in a lobby
                               }: {
     auth: any,
     lobbies: any[],
-    owners: { [key: number]: string }
+    owners: { [key: number]: string },
+    currentUserLobby: number | null
 }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [showRestrictionModal, setShowRestrictionModal] = useState(false);
+    const [restrictionMessage, setRestrictionMessage] = useState('');
     const { post } = useForm();
 
     const webSocketChannel = `lobbies`;
@@ -34,12 +38,51 @@ export default function Lobby({
     );
 
     const handleJoinLobby = (lobbyId: number) => {
+        // Check if user is already in a lobby
+        if (currentUserLobby) {
+            setRestrictionMessage('You are already in a lobby. Please leave your current lobby before joining a new one.');
+            setShowRestrictionModal(true);
+            return;
+        }
+
         post(route('lobby.join', lobbyId));
+    };
+
+    const handleCreateLobby = () => {
+        // Check if user is already in a lobby
+        if (currentUserLobby) {
+            setRestrictionMessage('You are already in a lobby. Please leave your current lobby before creating a new one.');
+            setShowRestrictionModal(true);
+            return;
+        }
+
+        // If not in a lobby, proceed to lobby creation page
+        window.location.href = route('lobby.create');
+    };
+
+    const closeModal = () => {
+        setShowRestrictionModal(false);
     };
 
     return (
         <Layout auth={auth}>
             <Head title="Game Lobbies"/>
+
+            {/* Restriction Modal */}
+            {showRestrictionModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Cannot Create/Join Lobby</h2>
+                        <p className="text-gray-600 mb-6">{restrictionMessage}</p>
+                        <button
+                            onClick={closeModal}
+                            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                            Understood
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4 py-8">
                 <div className="max-w-4xl w-full bg-white shadow-2xl rounded-2xl overflow-hidden">
@@ -66,12 +109,12 @@ export default function Lobby({
 
                             {/* Create Lobby Button */}
                             <div className="mb-8 text-center">
-                                <Link
-                                    href={route('lobby.create')}
+                                <button
+                                    onClick={handleCreateLobby}
                                     className="inline-block bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
                                 >
                                     Create New Lobby
-                                </Link>
+                                </button>
                             </div>
                         </div>
 

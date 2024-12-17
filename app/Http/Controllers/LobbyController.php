@@ -20,10 +20,13 @@ class LobbyController
 
     public function index()
     {
+
         $lobbies = Lobby::where('is_public', true)
             ->whereColumn('current_players', '<', 'max_players')
             ->latest()
             ->get();
+
+
         return Inertia::render('Lobby', [
             'lobbies' => $lobbies->map(fn($lobby) => [
                 'id' => $lobby->id,
@@ -34,7 +37,8 @@ class LobbyController
                 'max_players' => $lobby->max_players,
                 'code' => $lobby->code
             ]),
-            'owners' => User::whereIn('id', $lobbies->pluck('owner_id'))->pluck('name', 'id')
+            'owners' => User::whereIn('id', $lobbies->pluck('owner_id'))->pluck('name', 'id'),
+            'currentUserLobby' => Lobby::where('owner_id', Auth::id())->first(),
         ]);
     }
 
