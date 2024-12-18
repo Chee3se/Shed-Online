@@ -138,15 +138,6 @@ export default function LobbyShow({
                             )}
                         </div>
 
-                        <div className="mt-6 text-center">
-                            <Link
-                                href={route('lobby')}
-                                as="button"
-                                className="text-indigo-600 hover:underline"
-                            >
-                                Back to Lobbies
-                            </Link>
-                        </div>
                     </div>
                 </div>
             </div>
