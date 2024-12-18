@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateLobbyUserPivotTable extends Migration
+class CreateLobbyUsersPivotTable extends Migration
 {
     public function up()
     {
-        Schema::create('lobby_user', function (Blueprint $table) {
+        Schema::create('lobby_users', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('lobby_id');
             $table->unsignedBigInteger('user_id');

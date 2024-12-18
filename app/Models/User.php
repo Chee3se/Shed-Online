@@ -50,6 +50,6 @@ class User extends Authenticatable
 
     public function lobbies()
     {
-        return $this->belongsToMany(Lobby::class, 'lobby_user');
+        return $this->belongsToMany(Lobby::class, 'lobby_users');
     }
 }

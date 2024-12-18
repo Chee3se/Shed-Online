@@ -6,6 +6,7 @@ use App\Events\NewLobby;
 use App\Events\LobbyDeleted;
 use App\Jobs\CreateLobby;
 use App\Models\Lobby;
+use App\Models\LobbyUsers;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class LobbyController
                 'code' => $lobby->code
             ]),
             'owners' => User::whereIn('id', $lobbies->pluck('owner_id'))->pluck('name', 'id'),
-            'currentUserLobby' => Lobby::where('owner_id', Auth::id())->first(),
+            'currentUserLobby' => LobbyUsers::all()
         ]);
     }
 
