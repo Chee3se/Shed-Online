@@ -6,7 +6,7 @@ import Layout from "@/Layouts/Layout";
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function ConfirmPassword(auth) {
+export default function ConfirmPassword({ auth }: { auth?: any }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         password: '',
     });

@@ -11,6 +11,7 @@ export default function ResetPassword({
     token,
     email,
 }: {
+    auth: any;
     token: string;
     email: string;
 }) {

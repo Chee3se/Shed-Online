@@ -5,7 +5,7 @@ import Layout from "@/Layouts/Layout";
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function ForgotPassword({ status }: { status?: string }, auth) {
+export default function ForgotPassword({ status }: { status?: string }, { auth }: { auth?: any }) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
     });

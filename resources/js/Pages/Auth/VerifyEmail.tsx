@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import Layout from "@/Layouts/Layout";
 
-export default function VerifyEmail({ status }: { status?: string }, auth) {
+export default function VerifyEmail({ status }: { status?: string }, { auth }: { auth?: any }) {
     const { post, processing } = useForm({});
 
     const submit: FormEventHandler = (e) => {
