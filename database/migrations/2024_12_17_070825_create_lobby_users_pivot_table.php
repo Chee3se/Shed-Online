@@ -23,6 +23,6 @@ class CreateLobbyUsersPivotTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('lobby_user');
+        Schema::dropIfExists('lobby_users');
     }
 }

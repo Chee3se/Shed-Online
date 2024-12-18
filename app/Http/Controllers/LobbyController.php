@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Events\LobbyUpdated;
+use Illuminate\Support\Facades\DB;
+
 
 class LobbyController
 {
@@ -22,12 +24,14 @@ class LobbyController
 
     public function index()
     {
-
         $lobbies = Lobby::where('is_public', true)
             ->whereColumn('current_players', '<', 'max_players')
             ->latest()
             ->get();
 
+        $currentUserLobby = Lobby::whereHas('players', function($query) {
+            $query->where('user_id', auth()->id());
+        })->first();
 
         return Inertia::render('Lobby', [
             'lobbies' => $lobbies->map(fn($lobby) => [
@@ -40,7 +44,11 @@ class LobbyController
                 'code' => $lobby->code
             ]),
             'owners' => User::whereIn('id', $lobbies->pluck('owner_id'))->pluck('name', 'id'),
-            'currentUserLobby' => LobbyUsers::all()
+            'currentUserLobby' => $currentUserLobby ? [
+                'id' => $currentUserLobby->id,
+                'name' => $currentUserLobby->name,
+                'code' => $currentUserLobby->code
+            ] : null
         ]);
     }
 
@@ -94,6 +102,7 @@ class LobbyController
 
     public function join(Request $request, $code)
     {
+
         $lobby = Lobby::where('code', $code)->firstOrFail();
         $user = Auth::user();
 
