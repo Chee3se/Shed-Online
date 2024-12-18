@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import Layout from "@/Layouts/Layout";
 
-export default function VerifyEmail({ status }: { status?: string }) {
+export default function VerifyEmail({ status }: { status?: string }, auth) {
     const { post, processing } = useForm({});
 
     const submit: FormEventHandler = (e) => {
@@ -13,7 +13,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
     };
 
     return (
-        <Layout>
+        <Layout auth={auth}>
             <Head title="Email Verification" />
 
             <div className="mb-4 text-sm text-gray-600">

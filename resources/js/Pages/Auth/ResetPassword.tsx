@@ -7,6 +7,7 @@ import { FormEventHandler } from 'react';
 import Layout from "@/Layouts/Layout";
 
 export default function ResetPassword({
+    auth,
     token,
     email,
 }: {
@@ -29,7 +30,7 @@ export default function ResetPassword({
     };
 
     return (
-        <Layout>
+        <Layout auth={auth}>
             <Head title="Reset Password" />
 
             <form onSubmit={submit}>

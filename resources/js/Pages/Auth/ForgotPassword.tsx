@@ -1,11 +1,11 @@
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
+import Layout from "@/Layouts/Layout";
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function ForgotPassword({ status }: { status?: string }) {
+export default function ForgotPassword({ status }: { status?: string }, auth) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
     });
@@ -17,7 +17,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <GuestLayout>
+        <Layout auth={auth}>
             <Head title="Forgot Password" />
 
             <div className="mb-4 text-sm text-gray-600">
@@ -51,6 +51,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     </PrimaryButton>
                 </div>
             </form>
-        </GuestLayout>
+        </Layout>
     );
 }
