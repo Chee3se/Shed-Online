@@ -9,7 +9,7 @@ export default function Lobby({
                               }: {
     auth: any,
     lobbies: any[],
-    owners: { [key: number]: string }
+    owners: { [key: string]: string }
 }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [lobbies, setLobbies] = useState(initialLobbies);
@@ -19,7 +19,7 @@ export default function Lobby({
         const channel = window.Echo.channel('lobbies')
             .listen('.new-lobby', (event: any) => {
                 console.log("New Lobby", event);
-                setLobbies((prevLobbies) => [...prevLobbies, event]);
+                setLobbies((prevLobbies: any[]) => [...prevLobbies, event]);
             });
 
         return () => {
@@ -28,11 +28,11 @@ export default function Lobby({
     }, []);
 
     // Filter lobbies based on search term
-    const filteredLobbies = lobbies.filter(lobby =>
+    const filteredLobbies = lobbies.filter((lobby: any) =>
         lobby.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleJoinLobby = (lobbyId: number) => {
+    const handleJoinLobby = (lobbyId: any) => {
         post(route('lobby.join', lobbyId));
     };
 
@@ -67,6 +67,7 @@ export default function Lobby({
                             <div className="mb-8 text-center">
                                 <Link
                                     href={route('lobby.create')}
+                                    as="button"
                                     className="inline-block bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
                                 >
                                     Create New Lobby
@@ -77,64 +78,29 @@ export default function Lobby({
                         {/* Lobbies Grid */}
                         <div className="grid md:grid-cols-2 gap-6">
                             {filteredLobbies.length > 0 ? (
-                                filteredLobbies.map((lobby) => (
-                                    <div
-                                        key={lobby.id}
-                                        className="bg-indigo-50 p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-                                    >
+                                filteredLobbies.map((lobby: any) => (
+                                    <div key={lobby.code} className="bg-indigo-50 p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                                         <div className="flex justify-between items-center mb-4">
-                                            <h2 className="text-2xl font-bold text-gray-800">
-                                                {lobby.name}
-                                            </h2>
+                                            <h2 className="text-2xl font-bold text-gray-800">{lobby.name}</h2>
                                             {lobby.is_public === 1 ? (
-                                                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs">
-                                                    Public
-                                                </span>
+                                                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs">Public</span>
                                             ) : (
-                                                <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs">
-                                                    Private
-                                                </span>
+                                                <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs">Private</span>
                                             )}
                                         </div>
-
                                         <div className="text-gray-600 mb-4">
-                                            <p className="mb-2">
-                                                <strong>Players:</strong> {lobby.current_players} / {lobby.max_players}
-                                            </p>
-                                            <p className="mb-2">
-                                                <strong>Lobby Code:</strong>{' '}
-                                                <span className="bg-gray-200 px-2 py-1 rounded text-sm">
-                                                    {lobby.code}
-                                                </span>
-                                            </p>
-                                            <p>
-                                                <strong>Created by:</strong> {owners[lobby.owner_id] || 'Unknown'}
-                                            </p>
+                                            <p className="mb-2"><strong>Players:</strong> {lobby.current_players} / {lobby.max_players}</p>
+                                            <p className="mb-2"><strong>Lobby Code:</strong> <span className="bg-gray-200 px-2 py-1 rounded text-sm">{lobby.code}</span></p>
+                                            <p><strong>Created by:</strong> {owners[lobby.owner_id] || 'Unknown'}</p>
                                         </div>
-
                                         {lobby.current_players < lobby.max_players ? (
                                             auth.user.id === lobby.owner_id ? (
-                                                <Link
-                                                    href={route('lobby.show', lobby.id)}
-                                                    className="w-full block text-center bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
-                                                >
-                                                    Return to Your Lobby
-                                                </Link>
+                                                <Link href={route('lobby.show', lobby.code)} as="button" className="w-full block text-center bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">Return to Your Lobby</Link>
                                             ) : (
-                                                <button
-                                                    onClick={() => handleJoinLobby(lobby.id)}
-                                                    className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-                                                >
-                                                    Join Lobby
-                                                </button>
+                                                <Link href="#" onClick={() => handleJoinLobby(lobby.code)} as="button" className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors">Join Lobby</Link>
                                             )
                                         ) : (
-                                            <button
-                                                disabled
-                                                className="w-full block text-center bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed"
-                                            >
-                                                Lobby Full
-                                            </button>
+                                            <button disabled className="w-full block text-center bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed">Lobby Full</button>
                                         )}
                                     </div>
                                 ))
