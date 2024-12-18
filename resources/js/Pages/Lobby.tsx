@@ -113,7 +113,7 @@ export default function Lobby({
                                                 auth.user.id === lobby.owner_id ? (
                                                     <Link href={route('lobby.show', lobby.code)} as="button" className="w-full block text-center bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">Return to Your Lobby</Link>
                                                 ) : (
-                                                    <Link href={route('lobby.join', lobby.code)} method="POST" as="button" className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors">Join Lobby</Link>
+                                                    <Link href={route('lobby.join', lobby.code)} method="post" as="button" className="w-full block text-center bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors">Join Lobby</Link>
                                                 )
                                             ) : (
                                                 <button disabled className="w-full block text-center bg-gray-400 text-white py-3 rounded-lg cursor-not-allowed">
