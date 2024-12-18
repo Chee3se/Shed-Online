@@ -70,16 +70,20 @@ class LobbyController
             'password' => $validatedData['is_public'] ? null : Hash::make($validatedData['password']),
             'code' => $lobbyCode,
         ]);
-        broadcast(new NewLobby($lobby))->toOthers();
+
         // Automatically join the lobby
         $lobby->players()->attach(auth()->id());
 
+        // Broadcast new lobby creation
+        broadcast(new NewLobby($lobby))->toOthers();
+
         // Redirect to the lobby show page
-        return redirect()->route('lobby.show', $lobby);
+        return redirect()->route('lobby.show', $lobby->code);
     }
 
-    public function show(Lobby $lobby)
+    public function show($code)
     {
+        $lobby = Lobby::where('code', $code)->firstOrFail();
         return Inertia::render('LobbyShow', [
             'lobby' => $lobby->load('players'), // Eager load players
             'canJoin' => $lobby->current_players < $lobby->max_players,
@@ -87,8 +91,9 @@ class LobbyController
         ]);
     }
 
-    public function join(Request $request, Lobby $lobby)
+    public function join(Request $request, $code)
     {
+        $lobby = Lobby::where('code', $code)->firstOrFail();
         $user = Auth::user();
 
         // Check if lobby is full
@@ -98,7 +103,7 @@ class LobbyController
 
         // Check if user is already in the lobby
         if ($lobby->players()->where('user_id', $user->id)->exists()) {
-            return redirect()->route('lobby.show', $lobby->id);
+            return redirect()->route('lobby.show', $lobby->code);
         }
 
         // Attach user to lobby
@@ -111,11 +116,12 @@ class LobbyController
         broadcast(new LobbyUpdated($lobby))->toOthers();
 
         // Redirect to lobby show page
-        return redirect()->route('lobby.show', $lobby->id);
+        return redirect()->route('lobby.show', $lobby->code);
     }
 
-    public function leave(Lobby $lobby)
+    public function leave($code)
     {
+        $lobby = Lobby::where('code', $code)->firstOrFail();
         $user = Auth::user();
 
         // Check if user is in the lobby
@@ -128,11 +134,11 @@ class LobbyController
             // Remove all players
             $lobby->players()->detach();
 
-            // Delete the lobby
-            $lobby->delete();
-
             // Broadcast lobby deletion
             broadcast(new LobbyDeleted($lobby))->toOthers();
+
+            // Delete the lobby
+            $lobby->delete();
 
             return redirect()->route('lobby')->with('success', 'Lobby deleted');
         }

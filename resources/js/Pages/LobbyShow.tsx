@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
@@ -7,23 +7,30 @@ export default function LobbyShow({
                                       lobby,
                                       canJoin,
                                       owners
-                                  }: {
-    auth: any,
-    lobby: any,
-    canJoin: boolean,
-    owners: { [key: number]: string }
-}) {
+                                  }) {
     const { post } = useForm();
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            event.preventDefault();
+            handleLeaveLobby();
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
+
     const handleJoinLobby = () => {
-        post(route('lobby.join', lobby.id));
+        post(route('lobby.join', lobby.code));
     };
 
     const handleLeaveLobby = () => {
-        post(route('lobby.leave', lobby.id), {
+        post(route('lobby.leave', lobby.code), {
             onSuccess: () => {
-                // Redirect to lobbies page after leaving
                 window.location.href = route('lobby');
             }
         });
@@ -33,14 +40,11 @@ export default function LobbyShow({
         <Layout auth={auth}>
             <Head title={`Lobby: ${lobby.name}`} />
 
-            {/* Leave Lobby Confirmation Modal */}
             {isLeaveModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full">
                         <h2 className="text-xl font-bold mb-4">
-                            {lobby.owner_id === auth.user.id
-                                ? "Delete Lobby?"
-                                : "Leave Lobby?"}
+                            {lobby.owner_id === auth.user.id ? "Delete Lobby?" : "Leave Lobby?"}
                         </h2>
                         <p className="text-gray-600 mb-6">
                             {lobby.owner_id === auth.user.id
@@ -58,9 +62,7 @@ export default function LobbyShow({
                                 onClick={handleLeaveLobby}
                                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                             >
-                                {lobby.owner_id === auth.user.id
-                                    ? "Delete Lobby"
-                                    : "Leave Lobby"}
+                                {lobby.owner_id === auth.user.id ? "Delete Lobby" : "Leave Lobby"}
                             </button>
                         </div>
                     </div>
@@ -76,26 +78,18 @@ export default function LobbyShow({
 
                         <div className="bg-indigo-50 rounded-xl p-6 mb-6">
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold text-gray-800">
-                                    Lobby Details
-                                </h2>
+                                <h2 className="text-2xl font-bold text-gray-800">Lobby Details</h2>
                                 {lobby.is_public ? (
-                                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs">
-                    Public
-                  </span>
+                                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs">Public</span>
                                 ) : (
-                                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs">
-                    Private
-                  </span>
+                                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs">Private</span>
                                 )}
                             </div>
 
                             <div className="space-y-2 text-gray-700">
                                 <p>
                                     <strong>Lobby Code:</strong>{' '}
-                                    <span className="bg-gray-200 px-2 py-1 rounded text-sm">
-                    {lobby.code}
-                  </span>
+                                    <span className="bg-gray-200 px-2 py-1 rounded text-sm">{lobby.code}</span>
                                 </p>
                                 <p>
                                     <strong>Created by:</strong> {owners[lobby.owner_id]}
@@ -106,24 +100,16 @@ export default function LobbyShow({
                             </div>
                         </div>
 
-                        {/* Player List */}
                         <div className="mb-6">
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                Players
-                            </h3>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">Players</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {lobby.players && lobby.players.length > 0 ? (
                                     lobby.players.map((player) => (
-                                        <div
-                                            key={player.id}
-                                            className="bg-white border rounded-lg p-4 flex items-center"
-                                        >
+                                        <div key={player.id} className="bg-white border rounded-lg p-4 flex items-center">
                                             <div className="ml-3">
                                                 <p className="font-semibold">{player.name}</p>
                                                 {player.id === lobby.owner_id && (
-                                                    <span className="text-xs text-gray-500">
-                            (Lobby Owner)
-                          </span>
+                                                    <span className="text-xs text-gray-500">(Lobby Owner)</span>
                                                 )}
                                             </div>
                                         </div>
@@ -134,9 +120,7 @@ export default function LobbyShow({
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex space-x-4">
-                            {/* Leave Lobby Button */}
                             <button
                                 onClick={() => setIsLeaveModalOpen(true)}
                                 className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors"
@@ -147,16 +131,17 @@ export default function LobbyShow({
                             {lobby.owner_id === auth.user.id && (
                                 <button
                                     className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+                                    disabled={lobby.current_players < 2}
                                 >
                                     Start Game
                                 </button>
                             )}
                         </div>
 
-                        {/* Back to Lobbies Link */}
                         <div className="mt-6 text-center">
                             <Link
                                 href={route('lobby')}
+                                as="button"
                                 className="text-indigo-600 hover:underline"
                             >
                                 Back to Lobbies

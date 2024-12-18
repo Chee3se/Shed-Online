@@ -14,13 +14,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
     Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
     Route::post('/lobby/store', [LobbyController::class, 'store'])->name('lobby.store');
-    Route::get('/lobby/{lobby}', [LobbyController::class, 'show'])->name('lobby.show');
-    Route::post('/lobbies/{lobby}/join', [LobbyController::class, 'join'])
-        ->name('lobby.join')
-        ->middleware(['auth']);
-    Route::post('/lobby/{lobby}/leave', [LobbyController::class, 'leave'])
-        ->name('lobby.leave')
-        ->middleware(['auth', 'verified']);
+    Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
+    Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
+    Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
 });
 
 Route::get('/singleplayer', function () {
