@@ -87,11 +87,23 @@ export default function Offline({ auth }: { auth: any }) {
         const topCard = middlePile[middlePile.length - 1];
         const isSpecialCard = cardArray[0].value === '6' || cardArray[0].value === '10';
 
+        // New check for four-of-a-kind rule
+        const newMiddlePile = [...middlePile, ...cardArray];
+        const fourOfAKind = newMiddlePile.filter(card => card.value === cardArray[0].value).length === 4;
+
         if (!topCard || getCardValue(cardArray[0]) >= getCardValue(topCard) || isSpecialCard) {
-            if (cardArray[0].value === '10') {
-                // Clear middle pile for 10
-                setUsedPile([...usedPile, ...middlePile, ...cardArray]);
+            if (cardArray[0].value === '10' || fourOfAKind) {
+                // Clear middle pile for 10 or four-of-a-kind
+                setUsedPile([...usedPile, ...newMiddlePile]);
                 setMiddlePile([]);
+
+                // If four-of-a-kind, the player who placed the last card keeps their turn
+                if (fourOfAKind) {
+                    // No turn change
+                } else if (cardArray[0].value === '10') {
+                    // Normal 10 card behavior
+                    setIsPlayerTurn(player === 'player' ? false : true);
+                }
             } else {
                 // Add cards to middle pile with random offsets
                 const updatedCards = cardArray.map(card => ({
@@ -101,6 +113,9 @@ export default function Offline({ auth }: { auth: any }) {
                     rotation: Math.random() * 20 - 10
                 }));
                 setMiddlePile([...middlePile, ...updatedCards]);
+
+                // Normal turn change
+                setIsPlayerTurn(player === 'player' ? false : true);
             }
 
             // Remove placed cards from appropriate location
@@ -119,12 +134,7 @@ export default function Offline({ auth }: { auth: any }) {
                 }
 
                 // Draw replacement cards
-                if (cardArray[0].value !== '10') {
-                    setIsPlayerTurn(false);
-                }
-
-                // Draw cards to maintain hand size
-                if (remainingCount > 0 && playerHandCards.length <= 3) {
+                if (remainingCount > 0 && playerHandCards.length <= 3 && cardArray[0].value !== '10' && !fourOfAKind) {
                     const newCards = await drawCards(cardArray.length);
                     setPlayerHandCards(prevHandCards => [...prevHandCards, ...newCards]);
                 }
@@ -138,12 +148,8 @@ export default function Offline({ auth }: { auth: any }) {
                     updateCards(botDownCards, setBotDownCards);
                 }
 
-                if (cardArray[0].value !== '10') {
-                    setIsPlayerTurn(true);
-                }
-
-                // Draw cards to maintain hand size
-                if (remainingCount > 0 && botHandCards.length <= 3) {
+                // Draw replacement cards
+                if (remainingCount > 0 && botHandCards.length <= 3 && cardArray[0].value !== '10' && !fourOfAKind) {
                     const newCards = await drawCards(cardArray.length);
                     setBotHandCards(prevHandCards => [...prevHandCards, ...newCards]);
                 }
