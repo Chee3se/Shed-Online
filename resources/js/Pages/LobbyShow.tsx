@@ -7,12 +7,12 @@ export default function LobbyShow({
                                       lobby,
                                       canJoin,
                                       owners
-                                  }) {
+                                  }:{ auth?: any; lobby?: any; canJoin?: boolean; owners?: any}) {
     const { post } = useForm();
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
     useEffect(() => {
-        const handleBeforeUnload = (event) => {
+        const handleBeforeUnload = (event: any) => {
             event.preventDefault();
             handleLeaveLobby();
         };
@@ -104,7 +104,7 @@ export default function LobbyShow({
                             <h3 className="text-2xl font-bold text-gray-800 mb-4">Players</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {lobby.players && lobby.players.length > 0 ? (
-                                    lobby.players.map((player) => (
+                                    lobby.players.map((player: any) => (
                                         <div key={player.id} className="bg-white border rounded-lg p-4 flex items-center">
                                             <div className="ml-3">
                                                 <p className="font-semibold">{player.name}</p>

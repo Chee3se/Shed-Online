@@ -6,7 +6,7 @@ import Layout from "@/Layouts/Layout";
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function Register() {
+export default function Register({ auth }: { auth?: any }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -23,7 +23,7 @@ export default function Register() {
     };
 
     return (
-        <Layout>
+        <Layout auth={auth}>
             <Head title="Register" />
 
             <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
