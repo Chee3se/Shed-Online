@@ -11,7 +11,7 @@ export default function Layout({ auth, children }: LayoutProps) {
         <div className="bg-white text-black">
             <nav className="flex justify-center items-center h-16 bg-white text-black shadow-sm gap-6">
                 <div>
-                    <Link href={route('home')}>Home</Link>
+                    <Link href={route('/')}>Home</Link>
                 </div>
 
                 <div className="hidden md:flex flex-row gap-6 items-center">
