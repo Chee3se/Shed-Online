@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@font-face {
+    font-family: 'Phosphate';
+    src: url('/public/phosphate.ttc') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
