@@ -23,20 +23,20 @@ export default function CreateLobby({ auth }: { auth: any }) {
         <Layout auth={auth}>
             <Head title="Create Lobby" />
 
-            <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4 py-8">
-                <div className="max-w-md w-full bg-white shadow-2xl rounded-2xl overflow-hidden">
+            <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center px-4 py-8">
+                <div className="max-w-md w-full bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
                     <div className="p-8">
-                        <h1 className="text-4xl font-extrabold text-gray-800 mb-4 text-center">
-                            Create Lobby 🃏
+                        <h1 className="text-4xl font-extrabold text-black mb-4 text-center">
+                            Create Lobby
                         </h1>
-                        <p className="text-xl text-gray-600 mb-8 text-center">
+                        <p className="text-xl text-gray-700 mb-8 text-center">
                             Set up your Shed game lobby
                         </p>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Lobby Name */}
                             <div>
-                                <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
+                                <label htmlFor="name" className="block text-gray-800 font-bold mb-2">
                                     Lobby Name
                                 </label>
                                 <input
@@ -46,28 +46,27 @@ export default function CreateLobby({ auth }: { auth: any }) {
                                     onChange={(e) => setData('name', e.target.value)}
                                     className={`w-full px-4 py-3 rounded-lg border ${
                                         errors.name
-                                            ? 'border-red-500 focus:ring-red-500'
-                                            : 'border-gray-300 focus:ring-indigo-500'
-                                    } focus:outline-none focus:ring-2`}
+                                            ? 'border-red-600 focus:ring-red-600'
+                                            : 'border-gray-400 focus:ring-gray-800'
+                                    } focus:outline-none focus:ring-2 bg-white`}
                                     placeholder="Enter lobby name"
                                     required
                                 />
                                 {errors.name && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                    <p className="text-red-600 text-sm mt-1">{errors.name}</p>
                                 )}
                             </div>
 
-
                             {/* Max Players */}
                             <div>
-                                <label htmlFor="max_players" className="block text-gray-700 font-bold mb-2">
+                                <label htmlFor="max_players" className="block text-gray-800 font-bold mb-2">
                                     Max Players
                                 </label>
                                 <select
                                     id="max_players"
                                     value={data.max_players}
                                     onChange={(e) => setData('max_players', parseInt(e.target.value))}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 bg-white"
                                 >
                                     {[2, 3, 4, 5, 6].map(num => (
                                         <option key={num} value={num}>
@@ -79,7 +78,7 @@ export default function CreateLobby({ auth }: { auth: any }) {
 
                             {/* Lobby Visibility */}
                             <div>
-                                <label className="block text-gray-700 font-bold mb-2">
+                                <label className="block text-gray-800 font-bold mb-2">
                                     Lobby Type
                                 </label>
                                 <div className="flex space-x-4">
@@ -89,9 +88,9 @@ export default function CreateLobby({ auth }: { auth: any }) {
                                             name="is_public"
                                             checked={data.is_public === true}
                                             onChange={() => setData('is_public', true)}
-                                            className="form-radio text-indigo-600"
+                                            className="form-radio text-gray-800"
                                         />
-                                        <span className="ml-2">Public</span>
+                                        <span className="ml-2 text-gray-800">Public</span>
                                     </label>
                                     <label className="inline-flex items-center">
                                         <input
@@ -99,9 +98,9 @@ export default function CreateLobby({ auth }: { auth: any }) {
                                             name="is_public"
                                             checked={data.is_public === false}
                                             onChange={() => setData('is_public', false)}
-                                            className="form-radio text-indigo-600"
+                                            className="form-radio text-gray-800"
                                         />
-                                        <span className="ml-2">Private</span>
+                                        <span className="ml-2 text-gray-800">Private</span>
                                     </label>
                                 </div>
                             </div>
@@ -109,7 +108,7 @@ export default function CreateLobby({ auth }: { auth: any }) {
                             {/* Password for Private Lobby */}
                             {!data.is_public && (
                                 <div>
-                                    <label htmlFor="password" className="block text-gray-700 font-bold mb-2">
+                                    <label htmlFor="password" className="block text-gray-800 font-bold mb-2">
                                         Lobby Password
                                     </label>
                                     <input
@@ -119,14 +118,14 @@ export default function CreateLobby({ auth }: { auth: any }) {
                                         onChange={(e) => setData('password', e.target.value)}
                                         className={`w-full px-4 py-3 rounded-lg border ${
                                             errors.password
-                                                ? 'border-red-500 focus:ring-red-500'
-                                                : 'border-gray-300 focus:ring-indigo-500'
-                                        } focus:outline-none focus:ring-2`}
+                                                ? 'border-red-600 focus:ring-red-600'
+                                                : 'border-gray-400 focus:ring-gray-800'
+                                        } focus:outline-none focus:ring-2 bg-white`}
                                         placeholder="Enter lobby password"
                                         required={!data.is_public}
                                     />
                                     {errors.password && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                                        <p className="text-red-600 text-sm mt-1">{errors.password}</p>
                                     )}
                                 </div>
                             )}
@@ -136,7 +135,7 @@ export default function CreateLobby({ auth }: { auth: any }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                    className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                                 >
                                     {processing ? 'Creating...' : 'Create Lobby'}
                                 </button>
@@ -147,7 +146,7 @@ export default function CreateLobby({ auth }: { auth: any }) {
                         <div className="mt-6 text-center">
                             <Link
                                 href={route('lobby')}
-                                className="text-indigo-600 hover:underline"
+                                className="text-gray-800 hover:underline"
                             >
                                 Back to Lobbies
                             </Link>
