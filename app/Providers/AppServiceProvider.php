@@ -24,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
+            if (!extension_loaded('pcntl.so')) {
+                dl('pcntl.so');
+            }
         }
     }
 }
