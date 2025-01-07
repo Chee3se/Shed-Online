@@ -1,1 +1,1 @@
-web: heroku-php-apache2 -i user.ini public/
+web: heroku-php-apache2 -i .user.ini public/
