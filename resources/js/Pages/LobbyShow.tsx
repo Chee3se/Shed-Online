@@ -46,12 +46,6 @@ export default function LobbyShow({
                             <h2 className="text-2xl text-gray-800">
                                 {lobby.owner_id === auth.user.id ? "Delete Lobby" : "Leave Lobby"}
                             </h2>
-                            <button
-                                onClick={() => setIsLeaveModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                Close
-                            </button>
                         </div>
                         <p className="text-gray-600 mb-8">
                             {lobby.owner_id === auth.user.id
