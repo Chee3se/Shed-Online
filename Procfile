@@ -1,1 +1,1 @@
-RUN php artisan solo
+web: heroku-php-apache2 public/
