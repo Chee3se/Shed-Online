@@ -1,2 +1,1 @@
-reverb: php artisan reverb:start --debug
-web: composer run dev
+web: php artisan solo
