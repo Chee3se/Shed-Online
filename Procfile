@@ -1,1 +1,1 @@
-web: php artisan solo
+RUN php artisan solo
