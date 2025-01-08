@@ -25,12 +25,12 @@ class SoloServiceProvider extends ServiceProvider
                 EnhancedTailCommand::make('Logs', 'tail -f -n 100 ' . storage_path('logs/laravel.log')),
                 'Vite' => 'npm run dev',
                 'HTTP' => 'php artisan serve',
+                'Reverb' => 'php artisan reverb:start',
                 // 'About' => 'php artisan solo:about'
             ])
             // Not auto-started
             ->addLazyCommands([
                 // 'Queue' => 'php artisan queue:listen --tries=1',
-                'Reverb' => 'php artisan reverb:start',
                 // 'Pint' => 'pint --ansi',
             ])
             // FQCNs of trusted classes that can add commands.
