@@ -2,12 +2,6 @@
 
 use Illuminate\Http\Request;
 
-if (isset($_SERVER['HTTP_CONNECTION']) && $_SERVER['HTTP_CONNECTION'] === 'Upgrade') {
-    header('HTTP/1.1 101 Switching Protocols');
-    header('Upgrade: websocket');
-    exit;
-}
-
 define('LARAVEL_START', microtime(true));
 
 // Determine if the application is in maintenance mode...
