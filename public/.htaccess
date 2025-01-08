@@ -5,6 +5,16 @@
 
     RewriteEngine On
 
+    # Ensure correct MIME types for JavaScript and CSS files
+    <IfModule mod_mime.c>
+        AddType application/javascript .js
+        AddType text/css .css
+    </IfModule>
+
+    # Forward traffic to port 8080 if the host is wss.shed.id.lv
+    RewriteCond %{HTTP_HOST} ^wss\.shed\.id\.lv$ [NC]
+    RewriteRule ^(.*)$ http://%{HTTP_HOST}:8080/$1 [L,P]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
