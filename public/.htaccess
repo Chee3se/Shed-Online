@@ -1,14 +1,9 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    # Check if the request host is wss.shed.id.lv
-    RewriteCond %{HTTP_HOST} ^wss\.shed\.id\.lv$ [NC]
-    # Redirect to port 8080
-    RewriteRule ^(.*)$ http://%{HTTP_HOST}:8080/$1 [L,P]
-
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
+
+    RewriteEngine On
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
