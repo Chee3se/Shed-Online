@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ae15ac0522aeb9d534266cc19088f5f7",
+    "content-hash": "8339d67b7e1d873f9c83dd2f932f17f3",
     "packages": [
         {
             "name": "aaronfrancis/solo",
