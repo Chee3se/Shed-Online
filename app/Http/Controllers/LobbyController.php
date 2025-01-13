@@ -165,4 +165,28 @@ class LobbyController
         return redirect()->route('lobby')->with('success', 'Left lobby');
     }
 
+
+    public function toggleReady(string $code)
+    {
+        $lobby = Lobby::where('code', $code)->firstOrFail();
+        $player = auth()->user();
+
+        // Get the current player's lobby membership
+        $playerLobby = $player->lobbies()
+            ->where('lobby_id', $lobby->id)
+            ->firstOrFail();
+
+        // Toggle the status between 'ready' and 'not_ready' with proper string values
+        $newStatus = $playerLobby->pivot->status === 'ready' ? 'not ready' : 'ready';
+
+        // Update the status ensuring it's passed as a string
+        $player->lobbies()->updateExistingPivot($lobby->id, [
+            'status' => $newStatus
+        ]);
+
+        return redirect()->back();
+    }
+
+
+
 }

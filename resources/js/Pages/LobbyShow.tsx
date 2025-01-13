@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
@@ -10,18 +10,6 @@ export default function LobbyShow({
                                   }: { auth?: any; lobby?: any; canJoin?: boolean; owners?: any }) {
     const { post } = useForm();
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
-
-    useEffect(() => {
-        const handleBeforeUnload = (event: any) => {
-            event.preventDefault();
-            handleLeaveLobby();
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, []);
 
     const handleJoinLobby = () => {
         post(route('lobby.join', lobby.code));
@@ -35,10 +23,31 @@ export default function LobbyShow({
         });
     };
 
+    const handleReadyToggle = () => {
+        post(route('lobby.toggle-ready', lobby.code));
+    };
+
+    const handleStartGame = () => {
+        post(route('lobby.start-game', lobby.code));
+    };
+
+    // Check if current user is ready
+    const currentPlayer = lobby.players?.find((player: any) => player.id === auth.user.id);
+    const isCurrentPlayerReady = currentPlayer?.pivot.status === 'ready';
+
+    // Check if all non-owner players are ready
+    const areAllPlayersReady = lobby.players?.every((player: any) =>
+        player.id === lobby.owner_id || player.pivot.status === 'ready'
+    );
+
+    // Check if we can start the game (enough players and all are ready)
+    const canStartGame = lobby.current_players >= 2 && areAllPlayersReady;
+
     return (
         <Layout auth={auth}>
             <Head title={`Lobby: ${lobby.name}`} />
 
+            {/* Rest of your component code remains exactly the same */}
             {isLeaveModalOpen && (
                 <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 max-w-md w-full mx-4 shadow-xl ring-1 ring-gray-200">
@@ -130,15 +139,18 @@ export default function LobbyShow({
                                                 className="group bg-white/80 rounded-2xl p-4 ring-1 ring-gray-200 hover:ring-blue-500 flex items-center justify-between transition-all"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div
-                                                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm text-gray-600 ring-1 ring-gray-200">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm text-gray-600 ring-1 ring-gray-200">
                                                         {player.name.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-gray-800">{player.name}</p>
-                                                        {player.id === lobby.owner_id && (
+                                                        {player.id === lobby.owner_id ? (
                                                             <span className="text-sm text-gray-500">
                                                                 Lobby Owner
+                                                            </span>
+                                                        ) : (
+                                                            <span className={`text-sm ${player.pivot.status === 'ready' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {player.pivot.status === 'ready' ? 'Ready' : 'Not Ready'}
                                                             </span>
                                                         )}
                                                     </div>
@@ -161,14 +173,28 @@ export default function LobbyShow({
                                     Leave Lobby
                                 </button>
 
+                                {lobby.owner_id !== auth.user.id && (
+                                    <button
+                                        onClick={handleReadyToggle}
+                                        className={`flex-1 px-6 py-4 rounded-xl transition-all ${
+                                            isCurrentPlayerReady
+                                                ? 'bg-yellow-500 hover:bg-yellow-600'
+                                                : 'bg-green-500 hover:bg-green-600'
+                                        } text-white`}
+                                    >
+                                        {isCurrentPlayerReady ? 'Not Ready' : 'Ready'}
+                                    </button>
+                                )}
+
                                 {lobby.owner_id === auth.user.id && (
                                     <button
+                                        onClick={handleStartGame}
                                         className={`flex-1 px-6 py-4 rounded-xl transition-all ${
-                                            lobby.current_players < 2
+                                            !canStartGame
                                                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                                         }`}
-                                        disabled={lobby.current_players < 2}
+                                        disabled={!canStartGame}
                                     >
                                         Start Game
                                     </button>

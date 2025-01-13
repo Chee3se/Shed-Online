@@ -31,10 +31,8 @@ const MyCards: React.FC<MyCardsProps> = ({
             // Handle space key for placing selected cards
             if (e.code === 'Space' && isShiftPressed && selectedCards.length > 0) {
                 e.preventDefault(); // Prevent default space key behavior
-                if (selectedCards.every(card => isValidMove(card))) {
-                    handleCardPlacement(selectedCards, 'player');
-                    setSelectedCards([]);
-                }
+                handleCardPlacement(selectedCards, 'player');
+                setSelectedCards([]);
             }
         };
 
@@ -52,7 +50,7 @@ const MyCards: React.FC<MyCardsProps> = ({
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [isShiftPressed, selectedCards, isValidMove, handleCardPlacement]);
+    }, [isShiftPressed, selectedCards, handleCardPlacement]);
 
     const cardGroups = handCards.reduce((acc, card) => {
         if (!acc[card.value]) {
@@ -64,7 +62,9 @@ const MyCards: React.FC<MyCardsProps> = ({
 
     const getCardStyle = (index: number, total: number, card?: CardType) => {
         const baseStyle = {
-            transform: `${total < 6 ? `rotate(${(index - (total - 1) / 2) * (total > 3 ? 20 / total : 10)}deg) translateX(${(index - (total - 1) / 2) * (total > 3 ? 150 / total : 50)}px)` : `translateX(${(index - (total - 1) / 2) * (30)}px)`}`,
+            transform: `${total < 6 ?
+                `rotate(${(index - (total - 1) / 2) * (total > 3 ? 20 / total : 10)}deg) translateX(${(index - (total - 1) / 2) * (total > 3 ? 150 / total : 50)}px)` :
+                `translateX(${(index - (total - 1) / 2) * (30)}px)`}`,
             margin: '0 5px',
             transition: 'transform 0.2s ease-in-out',
         };
@@ -98,6 +98,7 @@ const MyCards: React.FC<MyCardsProps> = ({
                 }
             }
         } else {
+            // Single card placement - always allow placement and let handleCardPlacement handle invalid moves
             handleCardPlacement(card, 'player');
         }
     };
@@ -107,7 +108,7 @@ const MyCards: React.FC<MyCardsProps> = ({
             <div className="">
                 {isShiftPressed && selectedCards.length > 0 && (
                     <MultiCardNotification
-                        message={`Press SPACE to place ${selectedCards.length} cards ${selectedCards[0].value}'s` || ''}
+                        message={`Press SPACE to place ${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} (${selectedCards[0].value}'s)`}
                         isVisible={true}
                     />
                 )}

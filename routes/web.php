@@ -17,6 +17,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
     Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
+    Route::post('/lobby/{code}/toggle-ready', [LobbyController::class, 'toggleReady'])->name('lobby.toggle-ready');
+    Route::post('/lobby/{code}/start-game', [LobbyController::class, 'startGame'])->name('lobby.start-game');
 });
 
 Route::get('/singleplayer', function () {

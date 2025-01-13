@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Layout from "@/Layouts/Layout";
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -13,6 +13,20 @@ import Spinner from "@/Components/Spinner/Spinner";
 
 const DECK_API_BASE_URL = 'https://deckofcardsapi.com/api/deck';
 const DECK_COUNT = 1;
+const CARD_PLACEMENT_COOLDOWN = 500; // milliseconds between card placements
+
+const useCardCooldown = (cooldownTime: number) => {
+    const [isOnCooldown, setIsOnCooldown] = useState(false);
+
+    const startCooldown = useCallback(() => {
+        setIsOnCooldown(true);
+        setTimeout(() => {
+            setIsOnCooldown(false);
+        }, cooldownTime);
+    }, [cooldownTime]);
+
+    return { isOnCooldown, startCooldown };
+};
 
 export default function Offline({ auth }: { auth: any }) {
     const [deckId, setDeckId] = useState<string | null>(null);
@@ -26,9 +40,11 @@ export default function Offline({ auth }: { auth: any }) {
     const [middlePile, setMiddlePile] = useState<Card[]>([]);
     const [usedPile, setUsedPile] = useState<Card[]>([]);
     const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(true);
+    const [isBotThinking, setIsBotThinking] = useState<boolean>(false);
     const [gameOver, setGameOver] = useState<'player' | 'bot' | null>(null);
     const [gameStarted, setGameStarted] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const { isOnCooldown, startCooldown } = useCardCooldown(CARD_PLACEMENT_COOLDOWN);
 
     useEffect(() => {
         const initializeDeck = async () => {
@@ -74,11 +90,9 @@ export default function Offline({ auth }: { auth: any }) {
     }, [deckId]);
 
     const handleCardPlacement = async (cards: Card | Card[], player: 'player' | 'bot') => {
-        // Ensure we're always working with an array
         const cardArray = Array.isArray(cards) ? cards : [cards];
-
-        // Validate if all cards have the same value
         const sameValue = cardArray.every(card => card.value === cardArray[0].value);
+
         if (!sameValue) {
             console.error('Cards must have the same value for multiple placement');
             return;
@@ -86,26 +100,18 @@ export default function Offline({ auth }: { auth: any }) {
 
         const topCard = middlePile[middlePile.length - 1];
         const isSpecialCard = cardArray[0].value === '6' || cardArray[0].value === '10';
-
-        // New check for four-of-a-kind rule
         const newMiddlePile = [...middlePile, ...cardArray];
         const fourOfAKind = newMiddlePile.filter(card => card.value === cardArray[0].value).length === 4;
 
         if (!topCard || getCardValue(cardArray[0]) >= getCardValue(topCard) || isSpecialCard) {
             if (cardArray[0].value === '10' || fourOfAKind) {
-                // Clear middle pile for 10 or four-of-a-kind
                 setUsedPile([...usedPile, ...newMiddlePile]);
                 setMiddlePile([]);
-
-                // If four-of-a-kind, the player who placed the last card keeps their turn
-                if (fourOfAKind) {
-                    // No turn change
-                } else if (cardArray[0].value === '10') {
-                    // Normal 10 card behavior
+                // Keep turn if playing a 10
+                if (!fourOfAKind && cardArray[0].value !== '10') {
                     setIsPlayerTurn(player === 'player' ? false : true);
                 }
             } else {
-                // Add cards to middle pile with random offsets
                 const updatedCards = cardArray.map(card => ({
                     ...card,
                     offsetX: Math.random() * 10 - 5,
@@ -113,60 +119,64 @@ export default function Offline({ auth }: { auth: any }) {
                     rotation: Math.random() * 20 - 10
                 }));
                 setMiddlePile([...middlePile, ...updatedCards]);
-
-                // Normal turn change
                 setIsPlayerTurn(player === 'player' ? false : true);
             }
 
-            // Remove placed cards from appropriate location
             const updateCards = (cards: Card[], setCards: React.Dispatch<React.SetStateAction<Card[]>>) => {
                 const remainingCards = cards.filter(c => !cardArray.some(placedCard => placedCard.code === c.code));
                 setCards(remainingCards);
+                return remainingCards;
             };
 
             if (player === 'player') {
+                let remainingHandCards = playerHandCards;
                 if (cardArray.every(card => playerHandCards.some(c => c.code === card.code))) {
-                    updateCards(playerHandCards, setPlayerHandCards);
+                    remainingHandCards = updateCards(playerHandCards, setPlayerHandCards);
+
+                    // Draw cards if needed after playing (including after playing a 10)
+                    if (remainingCount > 0 && remainingHandCards.length < 3) {
+                        const cardsNeeded = Math.min(3 - remainingHandCards.length, remainingCount);
+                        if (cardsNeeded > 0) {
+                            const newCards = await drawCards(cardsNeeded);
+                            setPlayerHandCards(prevHandCards => [...prevHandCards, ...newCards]);
+                        }
+                    }
                 } else if (cardArray.every(card => playerUpCards.some(c => c.code === card.code)) && playerHandCards.length === 0) {
                     updateCards(playerUpCards, setPlayerUpCards);
                 } else if (cardArray.every(card => playerDownCards.some(c => c.code === card.code)) && playerHandCards.length === 0 && playerUpCards.length === 0) {
                     updateCards(playerDownCards, setPlayerDownCards);
                 }
-
-                // Draw replacement cards
-                if (remainingCount > 0 && playerHandCards.length <= 3 && cardArray[0].value !== '10' && !fourOfAKind) {
-                    const newCards = await drawCards(cardArray.length);
-                    setPlayerHandCards(prevHandCards => [...prevHandCards, ...newCards]);
-                }
             } else {
-                // Similar logic for bot
+                let remainingBotHandCards = botHandCards;
                 if (cardArray.every(card => botHandCards.some(c => c.code === card.code))) {
-                    updateCards(botHandCards, setBotHandCards);
+                    remainingBotHandCards = updateCards(botHandCards, setBotHandCards);
+
+                    // Draw cards if needed after playing (including after playing a 10)
+                    if (remainingCount > 0 && remainingBotHandCards.length < 3) {
+                        const cardsNeeded = Math.min(3 - remainingBotHandCards.length, remainingCount);
+                        if (cardsNeeded > 0) {
+                            const newCards = await drawCards(cardsNeeded);
+                            setBotHandCards(prevHandCards => [...prevHandCards, ...newCards]);
+                        }
+                    }
                 } else if (cardArray.every(card => botUpCards.some(c => c.code === card.code))) {
                     updateCards(botUpCards, setBotUpCards);
                 } else if (cardArray.every(card => botDownCards.some(c => c.code === card.code))) {
                     updateCards(botDownCards, setBotDownCards);
                 }
-
-                // Draw replacement cards
-                if (remainingCount > 0 && botHandCards.length <= 3 && cardArray[0].value !== '10' && !fourOfAKind) {
-                    const newCards = await drawCards(cardArray.length);
-                    setBotHandCards(prevHandCards => [...prevHandCards, ...newCards]);
-                }
             }
-        } else {
-            // Invalid move handling remains the same
         }
     };
 
     const playerMove = (cards: Card | Card[]) => {
-        const cardArray = Array.isArray(cards) ? cards : [cards];
-        const sameValue = cardArray.every(card => card.value === cardArray[0].value);
+        if (!isPlayerTurn || isOnCooldown || isBotThinking) return;
 
+        const cardArray = Array.isArray(cards) ? cards : [cards];
         if (cardArray.every(card => isValidMove(card))) {
+            startCooldown();
             handleCardPlacement(cardArray, 'player');
         } else {
-            // Player picks up the middle pile if no valid move
+            startCooldown();
             setPlayerHandCards([...playerHandCards, ...middlePile]);
             setMiddlePile([]);
             setIsPlayerTurn(false);
@@ -175,6 +185,7 @@ export default function Offline({ auth }: { auth: any }) {
 
     useEffect(() => {
         if (!isPlayerTurn) {
+            setIsBotThinking(true);
             const botMove = () => {
                 const validCard = botHandCards.find(card => isValidMove(card));
                 const validUpCard = botUpCards.find(card => isValidMove(card));
@@ -187,13 +198,13 @@ export default function Offline({ auth }: { auth: any }) {
                 } else if (validDownCard && botHandCards.length === 0 && botUpCards.length === 0) {
                     handleCardPlacement(validDownCard, 'bot');
                 } else {
-                    // Bot picks up the middle pile if no valid move
                     setBotHandCards([...botHandCards, ...middlePile]);
                     setMiddlePile([]);
                     setIsPlayerTurn(true);
                 }
+                setIsBotThinking(false);
             };
-            setTimeout(botMove, 1000); // Simulate bot thinking time
+            setTimeout(botMove, 1000);
         }
     }, [isPlayerTurn, botHandCards, botUpCards, botDownCards, middlePile]);
 
@@ -206,41 +217,21 @@ export default function Offline({ auth }: { auth: any }) {
     }, [playerHandCards, playerUpCards, playerDownCards]);
 
     useEffect(() => {
-        // Check for game over conditions AFTER every state changea
-        if(!gameStarted){
-            return;
-        }
-        if (
-            playerHandCards.length === 0 &&
-            playerUpCards.length === 0 &&
-            playerDownCards.length === 0
-        ) {
+        if(!gameStarted) return;
+
+        if (playerHandCards.length === 0 && playerUpCards.length === 0 && playerDownCards.length === 0) {
             setGameOver('player');
-        } else if (
-            botHandCards.length === 0 &&
-            botUpCards.length === 0 &&
-            botDownCards.length === 0
-        ) {
+        } else if (botHandCards.length === 0 && botUpCards.length === 0 && botDownCards.length === 0) {
             setGameOver('bot');
         }
-    }, [
-        playerHandCards,
-        playerUpCards,
-        playerDownCards,
-        botHandCards,
-        botUpCards,
-        botDownCards
-    ]);
+    }, [gameStarted, playerHandCards, playerUpCards, playerDownCards, botHandCards, botUpCards, botDownCards]);
 
     const isValidMove = (card: Card) => {
-        if (card.value === '6' || card.value === '10') {
-            return true;
-        }
+        if (card.value === '6' || card.value === '10') return true;
         const topCard = middlePile[middlePile.length - 1];
         return !topCard || getCardValue(card) >= getCardValue(topCard);
     };
 
-    // Game over renderer
     const renderGameOver = () => {
         if (!gameOver) return null;
         return (
@@ -288,7 +279,11 @@ export default function Offline({ auth }: { auth: any }) {
                         upCards={playerUpCards}
                         handleCardPlacement={playerMove}
                         isValidMove={isValidMove}
+                        disabled={isOnCooldown || !isPlayerTurn || isBotThinking}
                     />
+                    {!isPlayerTurn && isBotThinking && (
+                        <div className="text-gray-600 mt-2">Bot is thinking...</div>
+                    )}
                 </div>
             )}
         </Layout>

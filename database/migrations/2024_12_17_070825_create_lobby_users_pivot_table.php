@@ -12,8 +12,8 @@ class CreateLobbyUsersPivotTable extends Migration
             $table->id();
             $table->unsignedBigInteger('lobby_id');
             $table->unsignedBigInteger('user_id');
+            $table->enum('status', ['ready', 'not ready'])->default('not ready');
             $table->timestamps();
-
             $table->foreign('lobby_id')->references('id')->on('lobbies')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 

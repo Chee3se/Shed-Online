@@ -18,9 +18,9 @@ class Lobby extends Model
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
-    public function players()
-    {
-        return $this->belongsToMany(User::class, 'lobby_users', 'lobby_id', 'user_id');
+
+    public function players() {
+        return $this->belongsToMany(User::class, 'lobby_users', 'lobby_id', 'user_id')->withPivot('status');
     }
 
     // Ensure players are detached when lobby is deleted
