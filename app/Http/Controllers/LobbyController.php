@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -85,7 +86,11 @@ class LobbyController
         $lobby->players()->attach(auth()->id());
 
         // Broadcast new lobby creation
-        broadcast(new NewLobby($lobby))->toOthers();
+        Broadcast::on('lobbies')
+            ->toOthers()
+            ->with($lobby)
+            ->as('new-lobby')
+            ->sendNow();
 
         // Redirect to the lobby show page
         return redirect()->route('lobby.show', $lobby->code);
