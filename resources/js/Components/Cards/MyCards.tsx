@@ -9,6 +9,7 @@ interface MyCardsProps {
     upCards: CardType[];
     handleCardPlacement: (cards: CardType | CardType[], player: 'player' | 'bot') => void;
     isValidMove: (card: CardType) => boolean;
+    disabled?: boolean;
 }
 
 const MyCards: React.FC<MyCardsProps> = ({
@@ -16,7 +17,8 @@ const MyCards: React.FC<MyCardsProps> = ({
                                              downCards,
                                              upCards,
                                              handleCardPlacement,
-                                             isValidMove
+                                             isValidMove,
+                                             disabled
                                          }) => {
     const [hoveredCard, setHoveredCard] = useState<string | null>(null);
     const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
