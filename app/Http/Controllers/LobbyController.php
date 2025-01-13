@@ -98,7 +98,6 @@ class LobbyController
     public function show($code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
-        dd('here');
         return Inertia::render('LobbyShow', [
             'lobby' => $lobby->load('players'), // Eager load players
             'canJoin' => $lobby->current_players < $lobby->max_players,
