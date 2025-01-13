@@ -25,7 +25,7 @@ class SoloServiceProvider extends ServiceProvider
                 EnhancedTailCommand::make('Logs', 'tail -f -n 100 ' . storage_path('logs/laravel.log')),
                 'Vite' => 'npm run dev',
                 'HTTP' => 'php artisan serve',
-                'Reverb' => 'php artisan reverb:start',
+                'Reverb' => 'php artisan reverb:start --debug',
                 // 'About' => 'php artisan solo:about'
             ])
             // Not auto-started
