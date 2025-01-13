@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\NewLobby;
 use App\Events\LobbyDeleted;
+use App\Events\PlayerReadyStatusChanged;
 use App\Jobs\CreateLobby;
 use App\Models\Lobby;
 use App\Models\LobbyUsers;
@@ -166,25 +167,30 @@ class LobbyController
     }
 
 
-    public function toggleReady(string $code)
+    public function toggleReady(Request $request, $code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
-        $player = auth()->user();
+        $player = $request->user();
 
-        // Get the current player's lobby membership
-        $playerLobby = $player->lobbies()
+        // Get current status and toggle it
+        $currentStatus = $player->lobbies()
             ->where('lobby_id', $lobby->id)
-            ->firstOrFail();
+            ->first()
+            ->pivot
+            ->status;
 
-        // Toggle the status between 'ready' and 'not_ready' with proper string values
-        $newStatus = $playerLobby->pivot->status === 'ready' ? 'not ready' : 'ready';
+        // Normalize status values
+        $newStatus = $currentStatus === 'ready' ? 'not ready' : 'ready';
 
-        // Update the status ensuring it's passed as a string
+        // Update status in database
         $player->lobbies()->updateExistingPivot($lobby->id, [
             'status' => $newStatus
         ]);
 
-        return redirect()->back();
+        // Broadcast the change
+        broadcast(new PlayerReadyStatusChanged($code, $player->id, $newStatus))->toOthers();
+
+
     }
 
 

@@ -14,3 +14,8 @@ Broadcast::channel('lobby.{code}', function (User $user, string $code) {
         return ['id' => $user->id, 'name' => $user->name];
     }
 });
+
+Broadcast::channel('lobby.{code}', function ($user, $code) {
+    $lobby = App\Models\Lobby::where('code', $code)->first();
+    return $lobby->players->contains($user->id);
+});

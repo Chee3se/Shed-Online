@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 
 export default function LobbyShow({
                                       auth,
-                                      lobby,
+                                      lobby: initialLobby,
                                       canJoin,
                                       owners
-                                  }: { auth?: any; lobby?: any; canJoin?: boolean; owners?: any }) {
+                                  }) {
     const { post } = useForm();
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+    const [lobby, setLobby] = useState(initialLobby);
+
+    useEffect(() => {
+        // Join the lobby's private channel
+        const channel = window.Echo.private(`lobby.${lobby.code}`);
+
+        // Listen for ready status updates
+        channel.listen('PlayerReadyStatusChanged', (e) => {
+            setLobby(prevLobby => ({
+                ...prevLobby,
+                players: prevLobby.players.map(player =>
+                    player.id === e.playerId
+                        ? { ...player, pivot: { ...player.pivot, status: e.status } }
+                        : player
+                )
+            }));
+        });
+
+        // Clean up on unmount
+        return () => {
+            channel.stopListening('PlayerReadyStatusChanged');
+        };
+    }, [lobby.code]);
 
     const handleJoinLobby = () => {
         post(route('lobby.join', lobby.code));
@@ -24,23 +47,33 @@ export default function LobbyShow({
     };
 
     const handleReadyToggle = () => {
-        post(route('lobby.toggle-ready', lobby.code));
+        // Update local state immediately
+        const newStatus = currentPlayer?.pivot.status === 'ready' ? 'not_ready' : 'ready';
+        setLobby(prevLobby => ({
+            ...prevLobby,
+            players: prevLobby.players.map(player =>
+                player.id === auth.user.id
+                    ? { ...player, pivot: { ...player.pivot, status: newStatus } }
+                    : player
+            )
+        }));
+
+        // Make the API call without page refresh
+        post(route('lobby.toggle-ready', lobby.code), {
+            preserveScroll: true,
+            preserveState: true
+        });
     };
 
     const handleStartGame = () => {
         post(route('lobby.start-game', lobby.code));
     };
 
-    // Check if current user is ready
-    const currentPlayer = lobby.players?.find((player: any) => player.id === auth.user.id);
+    const currentPlayer = lobby.players?.find((player) => player.id === auth.user.id);
     const isCurrentPlayerReady = currentPlayer?.pivot.status === 'ready';
-
-    // Check if all non-owner players are ready
-    const areAllPlayersReady = lobby.players?.every((player: any) =>
+    const areAllPlayersReady = lobby.players?.every((player) =>
         player.id === lobby.owner_id || player.pivot.status === 'ready'
     );
-
-    // Check if we can start the game (enough players and all are ready)
     const canStartGame = lobby.current_players >= 2 && areAllPlayersReady;
 
     return (
