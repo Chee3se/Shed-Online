@@ -23,9 +23,7 @@ export default function LobbyShow({
             .leaving((user: any) => {
               console.log(user, ' left');
             })
-            .listen('.ready-toggle', (event: any) => {
-                console.log('ready')
-            });
+
 
         return () => {
             channel.leave();
@@ -34,11 +32,16 @@ export default function LobbyShow({
 
     }, []);
 
+    const handleReadyToggle = () => {
+        post(route('lobby.ready-toggle', lobby.code));
+    };
+
 
 
     const handleJoinLobby = () => {
         post(route('lobby.join', lobby.code));
     };
+
 
     const handleLeaveLobby = () => {
         post(route('lobby.leave', lobby.code), {
@@ -48,23 +51,6 @@ export default function LobbyShow({
         });
     };
 
-    const handleReadyToggle = () => {
-        // Update local state immediately
-        const newStatus = currentPlayer?.pivot.status === 'ready' ? 'not ready' : 'ready';
-        setLobby(prevLobby => ({
-            ...prevLobby,
-            players: prevLobby.players.map(player =>
-                player.id === auth.user.id
-                    ? { ...player, pivot: { ...player.pivot, status: newStatus } }
-                    : player
-            )
-        }));
-
-        post(route('lobby.toggle-ready', lobby.code), {
-            preserveScroll: true,
-            preserveState: true
-        });
-    };
 
     const handleStartGame = () => {
         post(route('lobby.start-game', lobby.code));
