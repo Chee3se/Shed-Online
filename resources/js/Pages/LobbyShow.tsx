@@ -6,33 +6,35 @@ export default function LobbyShow({
                                       auth,
                                       lobby: initialLobby,
                                       canJoin,
-                                      owners
+                                      owners,
                                   }) {
     const { post } = useForm();
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
     const [lobby, setLobby] = useState(initialLobby);
 
     useEffect(() => {
-        // Join the lobby's private channel
-        const channel = window.Echo.private(`lobby.${lobby.code}`);
-
-        // Listen for ready status updates
-        channel.listen('PlayerReadyStatusChanged', (e) => {
-            setLobby(prevLobby => ({
-                ...prevLobby,
-                players: prevLobby.players.map(player =>
-                    player.id === e.playerId
-                        ? { ...player, pivot: { ...player.pivot, status: e.status } }
-                        : player
-                )
-            }));
+        const channel = window.Echo.join(`lobby.${lobby.code}`)
+            .here((users: any) => {
+              console.log('you joined');
+            })
+            .joining((user: any) => {
+              console.log(user, ' joined');
+            })
+            .leaving((user: any) => {
+              console.log(user, ' left');
+            })
+        .listen('.ready-toggle', (e) => {
+            console.log('ready')
         });
 
-        // Clean up on unmount
         return () => {
-            channel.stopListening('PlayerReadyStatusChanged');
-        };
-    }, [lobby.code]);
+            channel.leave();
+        }
+
+
+    }, []);
+
+
 
     const handleJoinLobby = () => {
         post(route('lobby.join', lobby.code));
@@ -48,7 +50,7 @@ export default function LobbyShow({
 
     const handleReadyToggle = () => {
         // Update local state immediately
-        const newStatus = currentPlayer?.pivot.status === 'ready' ? 'not_ready' : 'ready';
+        const newStatus = currentPlayer?.pivot.status === 'ready' ? 'not ready' : 'ready';
         setLobby(prevLobby => ({
             ...prevLobby,
             players: prevLobby.players.map(player =>
@@ -58,7 +60,6 @@ export default function LobbyShow({
             )
         }));
 
-        // Make the API call without page refresh
         post(route('lobby.toggle-ready', lobby.code), {
             preserveScroll: true,
             preserveState: true
@@ -75,6 +76,8 @@ export default function LobbyShow({
         player.id === lobby.owner_id || player.pivot.status === 'ready'
     );
     const canStartGame = lobby.current_players >= 2 && areAllPlayersReady;
+
+
 
     return (
         <Layout auth={auth}>

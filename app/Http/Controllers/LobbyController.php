@@ -193,7 +193,14 @@ class LobbyController
         ]);
 
         // Broadcast the change
-        broadcast(new PlayerReadyStatusChanged($code, $player->id, $newStatus))->toOthers();
+        Broadcast::on('lobby.'.$code)
+            ->toOthers()
+            ->with([
+                'playerId' => $player->id,
+                'status' => $newStatus,
+                 'lobbyCode' => $code])
+            ->as('ready-toggle')
+            ->sendNow();
 
 
     }

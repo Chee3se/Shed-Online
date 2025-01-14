@@ -10,12 +10,7 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('lobbies', function ($user) {return true;});
 
 Broadcast::channel('lobby.{code}', function (User $user, string $code) {
-    if ($user->canJoinRoom($code)) {
         return ['id' => $user->id, 'name' => $user->name];
-    }
 });
 
-Broadcast::channel('lobby.{code}', function ($user, $code) {
-    $lobby = App\Models\Lobby::where('code', $code)->first();
-    return $lobby->players->contains($user->id);
-});
+
