@@ -1,8 +1,11 @@
 <?php
 
+use App\Events\PlayerReadyStatusChanged;
 use App\Http\Controllers\LobbyController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Lobby;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -17,7 +20,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
     Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
-    Route::post('/lobby/{code}/toggle-ready', [LobbyController::class, 'toggleReady'])->name('lobby.toggle-ready');
+    Route::post('/lobby/{code}/toggle-ready', function ($code) {
+        \broadcast(new PlayerReadyStatusChanged($code, auth()->id(), 'ready'))->toOthers();
+    })->name('lobby.toggle-ready');
     Route::post('/lobby/{code}/start-game', [LobbyController::class, 'startGame'])->name('lobby.start-game');
 });
 

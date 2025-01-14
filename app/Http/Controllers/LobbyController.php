@@ -86,6 +86,7 @@ class LobbyController
         $lobby->players()->attach(auth()->id());
 
         // Broadcast new lobby creation
+        // OLD - broadcast(new NewLobby($lobby))->toOthers();
         Broadcast::on('lobbies')
             ->toOthers()
             ->with($lobby)
@@ -170,41 +171,4 @@ class LobbyController
 
         return redirect()->route('lobby')->with('success', 'Left lobby');
     }
-
-
-    public function toggleReady(Request $request, $code)
-    {
-        $lobby = Lobby::where('code', $code)->firstOrFail();
-        $player = $request->user();
-
-        // Get current status and toggle it
-        $currentStatus = $player->lobbies()
-            ->where('lobby_id', $lobby->id)
-            ->first()
-            ->pivot
-            ->status;
-
-        // Normalize status values
-        $newStatus = $currentStatus === 'ready' ? 'not ready' : 'ready';
-
-        // Update status in database
-        $player->lobbies()->updateExistingPivot($lobby->id, [
-            'status' => $newStatus
-        ]);
-
-        // Broadcast the change
-        Broadcast::on('lobby.'.$code)
-            ->toOthers()
-            ->with([
-                'playerId' => $player->id,
-                'status' => $newStatus,
-                 'lobbyCode' => $code])
-            ->as('ready-toggle')
-            ->sendNow();
-
-
-    }
-
-
-
 }

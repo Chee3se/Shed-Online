@@ -23,9 +23,9 @@ export default function LobbyShow({
             .leaving((user: any) => {
               console.log(user, ' left');
             })
-        .listen('.ready-toggle', (e) => {
-            console.log('ready')
-        });
+            .listen('.ready-toggle', (event: any) => {
+                console.log('ready')
+            });
 
         return () => {
             channel.leave();

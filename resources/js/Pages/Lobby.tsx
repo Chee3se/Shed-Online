@@ -20,10 +20,8 @@ export default function Lobby({
     useEffect(() => {
         const channel = window.Echo.channel('lobbies')
             .listen('.new-lobby', (event: any) => {
-                console.log("New Lobby", event);
                 setLobbies((prevLobbies: any[]) => [...prevLobbies, event]);
             });
-
         return () => {
             channel.stopListening('.new-lobby');
         };
