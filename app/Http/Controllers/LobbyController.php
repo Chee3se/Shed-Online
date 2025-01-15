@@ -31,9 +31,7 @@ class LobbyController
             ->latest()
             ->get();
 
-        $currentUserLobby = Lobby::whereHas('players', function($query) {
-            $query->where('user_id', auth()->id());
-        })->first();
+        $currentUserLobby = Lobby::where('owner_id', auth()->id())->first();
 
         return Inertia::render('Lobby', [
             'lobbies' => $lobbies->map(fn($lobby) => [
@@ -76,14 +74,11 @@ class LobbyController
             'name' => $validatedData['name'],
             'owner_id' => auth()->id(),
             'max_players' => $validatedData['max_players'],
-            'current_players' => 1,
+            'current_players' => 0,
             'is_public' => $validatedData['is_public'],
             'password' => $validatedData['is_public'] ? null : Hash::make($validatedData['password']),
             'code' => $lobbyCode,
         ]);
-
-        // Automatically join the lobby
-        $lobby->players()->attach(auth()->id());
 
         // Broadcast new lobby creation
         // OLD - broadcast(new NewLobby($lobby))->toOthers();
@@ -100,68 +95,25 @@ class LobbyController
     public function show($code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
+        $lobby->increment('current_players');
         return Inertia::render('LobbyShow', [
-            'lobby' => $lobby->load('players'), // Eager load players
+            'initialLobby' => $lobby,
             'canJoin' => $lobby->current_players < $lobby->max_players,
             'owners' => User::whereIn('id', [$lobby->owner_id])->pluck('name', 'id')
         ]);
     }
 
-    public function join(Request $request, $code)
-    {
-
-        $lobby = Lobby::where('code', $code)->firstOrFail();
-        $user = Auth::user();
-
-        // Check if lobby is full
-        if ($lobby->current_players >= $lobby->max_players) {
-            return back()->with('error', 'Lobby is full');
-        }
-
-        // Check if user is already in the lobby
-        if ($lobby->players()->where('user_id', $user->id)->exists()) {
-            return redirect()->route('lobby.show', $lobby->code);
-        }
-
-        // Attach user to lobby
-        $lobby->players()->attach($user->id);
-
-        // Update current players count
-        $lobby->increment('current_players');
-
-        // Broadcast lobby update
-        broadcast(new LobbyUpdated($lobby))->toOthers();
-
-        // Redirect to lobby show page
-        return redirect()->route('lobby.show', $lobby->code);
-    }
-
     public function leave($code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
-        $user = Auth::user();
-
-        // Check if user is in the lobby
-        if (!$lobby->players()->where('user_id', $user->id)->exists()) {
-            return redirect()->route('lobby')->with('error', 'You are not in this lobby');
-        }
+        $user = auth()->user();
 
         // If user is the owner, delete the entire lobby
         if ($lobby->owner_id === $user->id) {
-            // Remove all players
-            $lobby->players()->detach();
-
-            // Broadcast lobby deletion
             broadcast(new LobbyDeleted($lobby))->toOthers();
-
-            // Delete the lobby
             $lobby->delete();
-
             return redirect()->route('lobby')->with('success', 'Lobby deleted');
         }
-
-        // If user is not the owner, just remove them from the lobby
-        $lobby->players()->detach($user->id);
 
         // Decrement current players count
         $lobby->decrement('current_players');

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'attributes',
     ];
 
     /**
@@ -48,11 +49,11 @@ class User extends Authenticatable
         ];
     }
 
-    public function lobbies()
+
+
+    public function toggleReady()
     {
-        return $this->belongsToMany(Lobby::class, 'lobby_users', 'user_id', 'lobby_id')
-            ->withPivot('status')
-            ->withTimestamps();
+        $this->attributes['ready'] = !$this->attributes['ready'];
     }
 
 }

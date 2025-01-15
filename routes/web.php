@@ -21,8 +21,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
     Route::post('/lobby/{code}/toggle-ready', function ($code) {
-        \broadcast(new PlayerReadyStatusChanged($code, auth()->id(), 'ready'))->toOthers();
-    })->name('lobby.toggle-ready');
+        dd(auth()->user()->attributes);
+        Broadcast::presence("lobby.{$code}")->as('ready-toggle')->toOthers()->sendNow();
+    })->name('lobby.ready');
     Route::post('/lobby/{code}/start-game', [LobbyController::class, 'startGame'])->name('lobby.start-game');
 });
 

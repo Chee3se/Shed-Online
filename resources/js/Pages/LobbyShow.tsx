@@ -1,83 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, router } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
+import axios from "axios";
+
+interface Player {
+    id: number;
+    name: string;
+}
 
 export default function LobbyShow({
                                       auth,
-                                      lobby: initialLobby,
+                                      initialLobby,
                                       canJoin,
                                       owners,
-                                  }) {
-    const { post } = useForm();
+                                  } : {
+    auth: any,
+    initialLobby: any,
+    canJoin: boolean,
+    owners: any,
+}) {
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
     const [lobby, setLobby] = useState(initialLobby);
+    const [players, setPlayers] = useState<Player[]>([]);
 
     useEffect(() => {
         const channel = window.Echo.join(`lobby.${lobby.code}`)
-            .here((users: any) => {
-              console.log('you joined');
+            .here((users: Player[]) => {
+              console.log(users, ' here');
+              console.log(lobby.owner_id);
+              console.log(auth.user.id);
+              setPlayers(users);
             })
-            .joining((user: any) => {
+            .joining((user: Player) => {
               console.log(user, ' joined');
+              setPlayers((prevPlayers) => [...prevPlayers, user]);
             })
-            .leaving((user: any) => {
+            .leaving((user: Player) => {
               console.log(user, ' left');
+              setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
             .listen('.ready-toggle', (event: any) => {
                 console.log('ready')
             });
 
         return () => {
-            channel.leave();
+            window.Echo.leave(`lobby.${lobby.code}`);
         }
 
 
     }, []);
 
-
-
-    const handleJoinLobby = () => {
-        post(route('lobby.join', lobby.code));
-    };
-
     const handleLeaveLobby = () => {
-        post(route('lobby.leave', lobby.code), {
-            onSuccess: () => {
-                window.location.href = route('lobby');
-            }
+        axios.post(route('lobby.leave', lobby.code)).then(() => {
+            router.get(route('lobby'));
         });
     };
 
     const handleReadyToggle = () => {
-        // Update local state immediately
-        const newStatus = currentPlayer?.pivot.status === 'ready' ? 'not ready' : 'ready';
-        setLobby(prevLobby => ({
-            ...prevLobby,
-            players: prevLobby.players.map(player =>
-                player.id === auth.user.id
-                    ? { ...player, pivot: { ...player.pivot, status: newStatus } }
-                    : player
-            )
-        }));
-
-        post(route('lobby.toggle-ready', lobby.code), {
-            preserveScroll: true,
-            preserveState: true
+        window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
+        axios.post(route('lobby.ready', lobby.code, )).then(() => {
+            console.log('you are ready');
         });
     };
 
     const handleStartGame = () => {
-        post(route('lobby.start-game', lobby.code));
+
     };
 
-    const currentPlayer = lobby.players?.find((player) => player.id === auth.user.id);
-    const isCurrentPlayerReady = currentPlayer?.pivot.status === 'ready';
-    const areAllPlayersReady = lobby.players?.every((player) =>
-        player.id === lobby.owner_id || player.pivot.status === 'ready'
-    );
-    const canStartGame = lobby.current_players >= 2 && areAllPlayersReady;
-
-
+    const areAllPlayersReady = false;
+    const canStartGame = lobby.current_players = lobby.max_players && areAllPlayersReady;
 
     return (
         <Layout auth={auth}>
@@ -127,7 +118,7 @@ export default function LobbyShow({
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
-                                    {lobby.current_players}/{lobby.max_players}
+                                    {players.length}/{lobby.max_players}
                                 </span>
                                 <span className={`px-4 py-1 rounded-full text-sm font-medium ${
                                     lobby.is_public
@@ -168,8 +159,8 @@ export default function LobbyShow({
                             <div className="space-y-4">
                                 <h3 className="text-2xl text-gray-800">Players</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {lobby.players && lobby.players.length > 0 ? (
-                                        lobby.players.map((player: any) => (
+                                    {players && players.length > 0 ? (
+                                        players.map((player: any) => (
                                             <div
                                                 key={player.id}
                                                 className="group bg-white/80 rounded-2xl p-4 ring-1 ring-gray-200 hover:ring-blue-500 flex items-center justify-between transition-all"
@@ -185,8 +176,8 @@ export default function LobbyShow({
                                                                 Lobby Owner
                                                             </span>
                                                         ) : (
-                                                            <span className={`text-sm ${player.pivot.status === 'ready' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                {player.pivot.status === 'ready' ? 'Ready' : 'Not Ready'}
+                                                            <span className={`text-sm ${'ready' === 'ready' ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {'ready' === 'ready' ? 'Ready' : 'Not Ready'}
                                                             </span>
                                                         )}
                                                     </div>
@@ -208,20 +199,16 @@ export default function LobbyShow({
                                 >
                                     Leave Lobby
                                 </button>
-
                                 {lobby.owner_id !== auth.user.id && (
                                     <button
                                         onClick={handleReadyToggle}
                                         className={`flex-1 px-6 py-4 rounded-xl transition-all ${
-                                            isCurrentPlayerReady
-                                                ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                : 'bg-green-500 hover:bg-green-600'
+                                                'bg-green-500 hover:bg-green-600'
                                         } text-white`}
                                     >
-                                        {isCurrentPlayerReady ? 'Not Ready' : 'Ready'}
+                                        {'Ready'}
                                     </button>
                                 )}
-
                                 {lobby.owner_id === auth.user.id && (
                                     <button
                                         onClick={handleStartGame}

@@ -31,10 +31,6 @@ export default function Lobby({
         lobby.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleJoinLobby = (lobbyCode: string) => {
-        post(route('lobby.join', { code: lobbyCode }));
-    };
-
     return (
         <Layout auth={auth}>
             <Head title="Game Lobbies"/>
@@ -133,8 +129,7 @@ export default function Lobby({
                                                     </Link>
                                                 ) : (
                                                     <Link
-                                                        href={route('lobby.join', lobby.code)}
-                                                        method="post"
+                                                        href={route('lobby.show', lobby.code)}
                                                         className=" w-full block text-center bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300"
                                                     >
                                                         Join Game
