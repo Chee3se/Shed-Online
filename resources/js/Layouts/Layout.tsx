@@ -20,7 +20,7 @@ export default function Layout({ auth, children }: LayoutProps) {
                         <>
                             <Link href={route('lobby')}>Lobby</Link>
                             <Link href={route('profile.edit')}>Profile</Link>
-                            <Link href={route('logout')} method="post">Logout</Link>
+                            <Link href={route('logout')} method="post" as="button">Logout</Link>
                         </>
                     ) : (
                         <>

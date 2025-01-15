@@ -22,13 +22,13 @@ export default function LobbyShow({
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
     const [lobby, setLobby] = useState(initialLobby);
     const [players, setPlayers] = useState<Player[]>([]);
+    const [readyPlayers, setReadyPlayers] = useState<Player[]>([]);
 
     useEffect(() => {
+        window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
         const channel = window.Echo.join(`lobby.${lobby.code}`)
             .here((users: Player[]) => {
               console.log(users, ' here');
-              console.log(lobby.owner_id);
-              console.log(auth.user.id);
               setPlayers(users);
             })
             .joining((user: Player) => {
@@ -39,9 +39,15 @@ export default function LobbyShow({
               console.log(user, ' left');
               setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
-            .listen('.ready-toggle', (event: any) => {
-                console.log('ready')
-            });
+            .listenForWhisper('ready-toggle', (player: Player) => {
+                setReadyPlayers((prevPlayers) => {
+                    const isPlayerReady = prevPlayers.some((p) => p.id === player.id);
+                    console.log(player.name + (isPlayerReady ? ' is not ready' : ' is ready'));
+                    return isPlayerReady
+                        ? prevPlayers.filter((p) => p.id !== player.id)
+                        : [...prevPlayers, player];
+                });
+            })
 
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
@@ -57,9 +63,14 @@ export default function LobbyShow({
     };
 
     const handleReadyToggle = () => {
-        window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
-        axios.post(route('lobby.ready', lobby.code, )).then(() => {
-            console.log('you are ready');
+        const me: Player = { id: auth.user.id, name: auth.user.name };
+        window.Echo.join(`lobby.${lobby.code}`).whisper('ready-toggle', me)
+        setReadyPlayers((prevPlayers) => {
+            const isPlayerReady = prevPlayers.some((p) => p.id === me.id);
+            console.log('You' + (isPlayerReady ? ' are not ready' : ' are ready'));
+            return isPlayerReady
+                ? prevPlayers.filter((p) => p.id !== me.id)
+                : [...prevPlayers, me];
         });
     };
 
@@ -67,7 +78,7 @@ export default function LobbyShow({
 
     };
 
-    const areAllPlayersReady = false;
+    const areAllPlayersReady = players.length === readyPlayers.length;
     const canStartGame = lobby.current_players = lobby.max_players && areAllPlayersReady;
 
     return (
@@ -176,8 +187,8 @@ export default function LobbyShow({
                                                                 Lobby Owner
                                                             </span>
                                                         ) : (
-                                                            <span className={`text-sm ${'ready' === 'ready' ? 'text-green-600' : 'text-red-600'}`}>
-                                                                {'ready' === 'ready' ? 'Ready' : 'Not Ready'}
+                                                            <span className={`text-sm ${readyPlayers.some((p) => p.id === player.id) ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {readyPlayers.some((p) => p.id === player.id) ? 'Ready' : 'Not Ready'}
                                                             </span>
                                                         )}
                                                     </div>
