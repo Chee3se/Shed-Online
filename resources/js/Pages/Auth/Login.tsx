@@ -17,7 +17,7 @@ export default function Login({
     canResetPassword: boolean;
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        name: '',
         password: '',
         remember: false,
     });
@@ -49,24 +49,24 @@ export default function Login({
                     <form onSubmit={submit} className="space-y-6">
                         <div>
                             <InputLabel
-                                htmlFor="email"
-                                value="Email"
+                                htmlFor="name"
+                                value="Name"
                                 className="block text-sm font-medium text-gray-700"
                             />
 
                             <TextInput
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={data.email}
+                                id="name"
+                                type="text"
+                                name="name"
+                                value={data.name}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                 autoComplete="username"
                                 isFocused={true}
-                                onChange={(e) => setData('email', e.target.value)}
-                                placeholder="Enter your email"
+                                onChange={(e) => setData('name', e.target.value)}
+                                placeholder="Enter your name"
                             />
 
-                            <InputError message={errors.email} className="mt-2 text-sm text-red-600" />
+                            <InputError message={errors.name} className="mt-2 text-sm text-red-600" />
                         </div>
 
                         <div>
