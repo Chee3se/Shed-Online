@@ -38,6 +38,7 @@ export default function LobbyShow({
             .leaving((user: Player) => {
               console.log(user, ' left');
               setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
+              setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
             .listenForWhisper('ready-toggle', (player: Player) => {
                 setReadyPlayers((prevPlayers) => {
