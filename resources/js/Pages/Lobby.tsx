@@ -18,10 +18,16 @@ export default function Lobby({
     const { post } = useForm();
 
     useEffect(() => {
+
         const channel = window.Echo.channel('lobbies')
             .listen('.new-lobby', (event: any) => {
                 setLobbies((prevLobbies: any[]) => [...prevLobbies, event]);
-            });
+                console.log(event);
+            })
+            .listen('.lobby-deleted', (event: any) => {
+                setLobbies((prevLobbies: any[]) => prevLobbies.filter((lobby: any) => lobby.code !== event.code));
+            })
+
         return () => {
             channel.stopListening('.new-lobby');
         };
@@ -91,7 +97,7 @@ export default function Lobby({
                                              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200 hover:ring-blue-500 transition-all duration-300">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h2 className=" text-2xl text-gray-800">{lobby.name}</h2>
-                                                {lobby.is_public === 1 ? (
+                                                {lobby.is_public == 1 ? (
                                                     <span className="px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Public</span>
                                                 ) : (
                                                     <span className="px-4 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">Private</span>

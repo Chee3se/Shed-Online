@@ -14,13 +14,17 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::post('game/start/{code}', [GameController::class, 'start'])->name('game.start');
+    Route::get('game/{id}', [GameController::class, 'show'])->name('game.show');
+});
+
+Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
     Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
     Route::post('/lobby/store', [LobbyController::class, 'store'])->name('lobby.store');
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
     Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
-    Route::post('/lobby/{code}/start-game', [LobbyController::class, 'startGame'])->name('lobby.start-game');
 });
 
 Route::get('/singleplayer', function () {

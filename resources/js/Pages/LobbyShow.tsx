@@ -40,6 +40,7 @@ export default function LobbyShow({
               setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
               setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
+            .listenForWhisper('lobby-deleted', () => {router.get(route('lobby'));})
             .listenForWhisper('ready-toggle', (player: Player) => {
                 setReadyPlayers((prevPlayers) => {
                     const isPlayerReady = prevPlayers.some((p) => p.id === player.id);
@@ -50,6 +51,8 @@ export default function LobbyShow({
                 });
             })
 
+
+
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
             axios.post(route('lobby.leave', lobby.code)).then(() => {
@@ -59,6 +62,9 @@ export default function LobbyShow({
     }, []);
 
     const handleLeaveLobby = () => {
+        if (lobby.owner_id === auth.user.id) {
+            window.Echo.join(`lobby.${lobby.code}`).whisper('lobby-deleted');
+        }
         axios.post(route('lobby.leave', lobby.code)).then(() => {
             router.get(route('lobby'));
         });

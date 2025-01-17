@@ -110,7 +110,11 @@ class LobbyController
 
         // If user is the owner, delete the entire lobby
         if ($lobby->owner_id === $user->id) {
-            broadcast(new LobbyDeleted($lobby))->toOthers();
+            Broadcast::on('lobbies')
+                ->toOthers()
+                ->with($lobby)
+                ->as('lobby-deleted')
+                ->sendNow();
             $lobby->delete();
             return redirect()->route('lobby')->with('success', 'Lobby deleted');
         }
@@ -123,4 +127,10 @@ class LobbyController
 
         return redirect()->route('lobby')->with('success', 'Left lobby');
     }
+
+    public function game($code){
+
+    }
+
+
 }
