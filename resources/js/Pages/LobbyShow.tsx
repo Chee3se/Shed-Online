@@ -52,9 +52,10 @@ export default function LobbyShow({
 
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
+            axios.post(route('lobby.leave', lobby.code)).then(() => {
+                window.Echo.leave(`lobby.${lobby.code}`);
+            });
         }
-
-
     }, []);
 
     const handleLeaveLobby = () => {
