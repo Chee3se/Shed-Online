@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\NewLobby;
 use App\Events\LobbyDeleted;
-use App\Events\PlayerReadyStatusChanged;
-use App\Jobs\CreateLobby;
+
 use App\Models\Lobby;
-use App\Models\LobbyUsers;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -128,9 +126,6 @@ class LobbyController
         return redirect()->route('lobby')->with('success', 'Left lobby');
     }
 
-    public function game($code){
-
-    }
 
 
 }

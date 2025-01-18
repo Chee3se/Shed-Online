@@ -14,28 +14,39 @@ export default function Lobby({
     currentUserLobby: any
 }) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [lobbies, setLobbies] = useState(initialLobbies);
+    const [lobbies, setLobbies] = useState(
+        initialLobbies.filter((lobby: any) => !lobby.deleted)
+    );
     const { post } = useForm();
 
     useEffect(() => {
-
         const channel = window.Echo.channel('lobbies')
             .listen('.new-lobby', (event: any) => {
                 setLobbies((prevLobbies: any[]) => [...prevLobbies, event]);
                 console.log(event);
             })
             .listen('.lobby-deleted', (event: any) => {
-                setLobbies((prevLobbies: any[]) => prevLobbies.filter((lobby: any) => lobby.code !== event.code));
-            })
+                setLobbies((prevLobbies: any[]) => {
+                    console.log('Removing lobby:', event.code);
+                    return prevLobbies.filter((lobby: any) => lobby.code !== event.code);
+                });
+            });
 
         return () => {
             channel.stopListening('.new-lobby');
+            channel.stopListening('.lobby-deleted');  // Add this line
         };
     }, []);
 
-    const filteredLobbies = lobbies.filter((lobby: any) =>
-        lobby.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
+
+    const filteredLobbies = lobbies.filter((lobby: any) => {
+        const matchesSearch = lobby.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const isNotDeletedOwnerLobby = !(lobby.owner_id === auth.user.id && currentUserLobby?.code === lobby.code);
+        return matchesSearch && isNotDeletedOwnerLobby;
+    });
+
+
 
     return (
         <Layout auth={auth}>
@@ -53,18 +64,6 @@ export default function Lobby({
                             </p>
                         </div>
 
-                        {/* Current Lobby Alert */}
-                        {currentUserLobby && (
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg ring-1 ring-yellow-200">
-                                <p className=" text-xl text-gray-800 mb-3">Active Lobby</p>
-                                <Link
-                                    href={route('lobby.show', currentUserLobby.code)}
-                                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                                >
-                                    Return to Your Game
-                                </Link>
-                            </div>
-                        )}
 
                         <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl ring-1 ring-gray-200">
                             {/* Search and Create Section */}
@@ -79,14 +78,14 @@ export default function Lobby({
                                     />
                                 </div>
 
-                                {!currentUserLobby && (
+
                                     <Link
                                         href={route('lobby.create')}
                                         className=" inline-flex items-center justify-center px-8 py-4 text-lg text-white bg-black rounded-full hover:bg-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl"
                                     >
                                         Create New Lobby
                                     </Link>
-                                )}
+
                             </div>
 
                             {/* Lobbies Grid */}
@@ -125,28 +124,21 @@ export default function Lobby({
                                                 </div>
                                             </div>
 
-                                            {!currentUserLobby && lobby.current_players < lobby.max_players ? (
-                                                auth.user.id === lobby.owner_id ? (
-                                                    <Link
-                                                        href={route('lobby.show', lobby.code)}
-                                                        className=" w-full block text-center bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300"
-                                                    >
-                                                        Return to Lobby
-                                                    </Link>
-                                                ) : (
+                                            {lobby.current_players < lobby.max_players ? (
+
                                                     <Link
                                                         href={route('lobby.show', lobby.code)}
                                                         className=" w-full block text-center bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300"
                                                     >
                                                         Join Game
                                                     </Link>
-                                                )
+
                                             ) : (
                                                 <button
                                                     disabled
                                                     className=" w-full block text-center bg-gray-200 text-gray-500 py-3 rounded-xl cursor-not-allowed"
                                                 >
-                                                    {currentUserLobby ? 'Already in Game' : 'Lobby Full'}
+                                                    Lobby Full
                                                 </button>
                                             )}
                                         </div>

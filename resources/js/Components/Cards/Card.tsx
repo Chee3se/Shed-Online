@@ -7,6 +7,7 @@ interface CardProps {
     selected?: boolean;
     style?: React.CSSProperties;
     onClick?: () => void;
+    disabled?: boolean;
     isValidMove?: boolean;
     cardType: 'down' | 'up' | 'hand' | 'middle' | 'used';
     hovered?: boolean;

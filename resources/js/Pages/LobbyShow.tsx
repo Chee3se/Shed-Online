@@ -28,18 +28,19 @@ export default function LobbyShow({
         window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
         const channel = window.Echo.join(`lobby.${lobby.code}`)
             .here((users: Player[]) => {
-              console.log(users, ' here');
-              setPlayers(users);
+                console.log(users, ' here');
+                setPlayers(users);
             })
             .joining((user: Player) => {
-              console.log(user, ' joined');
-              setPlayers((prevPlayers) => [...prevPlayers, user]);
+                console.log(user, ' joined');
+                setPlayers((prevPlayers) => [...prevPlayers, user]);
             })
             .leaving((user: Player) => {
-              console.log(user, ' left');
-              setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
-              setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
+                console.log(user, ' left');
+                setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
+                setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
+
             .listenForWhisper('lobby-deleted', () => {router.get(route('lobby'));})
             .listenForWhisper('ready-toggle', (player: Player) => {
                 setReadyPlayers((prevPlayers) => {
@@ -50,6 +51,13 @@ export default function LobbyShow({
                         : [...prevPlayers, player];
                 });
             })
+            .listenForWhisper('game-starting', (data: { gameId: string, players: Player[], owner: number }) => {
+                // Add a small delay for non-owner players too
+                setTimeout(() => {
+                    router.get(route('game.show', data.gameId));
+                }, 500);
+            });
+
 
 
 
@@ -82,12 +90,41 @@ export default function LobbyShow({
         });
     };
 
+    // In the handleStartGame function
     const handleStartGame = () => {
+        if (!canStartGame) {
+            return;
+        }
 
+        // Generate game ID from lobby code
+        const gameId = lobby.code;
+
+        // First store players
+        axios.post(route('game.players.store', gameId), {
+            players: players
+        }).then(() => {
+            // Emit to all players including owner
+            window.Echo.join(`lobby.${lobby.code}`)
+                .whisper('game-starting', {
+                    gameId: gameId,
+                    players: players,
+                    owner: auth.user.id
+                });
+
+            // Wait a moment before redirecting owner
+            setTimeout(() => {
+                router.get(route('game.show', gameId));
+            }, 1000);
+        }).catch(error => {
+            console.error('Error storing players:', error);
+        });
     };
 
-    const areAllPlayersReady = players.length === readyPlayers.length;
-    const canStartGame = lobby.current_players = lobby.max_players && areAllPlayersReady;
+// Add this to your useEffect hook's channel listener setup
+
+    const ownerIsPresent = players.some(p => p.id === lobby.owner_id);
+    const areAllPlayersReady = players.length === (readyPlayers.length + (ownerIsPresent ? 1 : 0));
+    const canStartGame = players.length >= 2 && areAllPlayersReady;
 
     return (
         <Layout auth={auth}>

@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('lobbies', function ($user) {return true;});
 
 Broadcast::channel('lobby.{code}', function (User $user, string $code) {
-    return ['id' => $user->id, 'name' => $user->name, 'ready' => false];
+    return ['id' => $user->id, 'name' => $user->name,];
+});
+Broadcast::channel('game.{gameId}', function ($user) {
+    return ['id' => $user->id, 'name' => $user->name];
 });
 
 

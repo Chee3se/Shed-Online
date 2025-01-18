@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\PlayerReadyStatusChanged;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\LobbyController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Lobby;
@@ -13,11 +14,14 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
-Route::middleware('auth')->group(function () {
-    Route::post('game/start/{code}', [GameController::class, 'start'])->name('game.start');
-    Route::get('game/{id}', [GameController::class, 'show'])->name('game.show');
-});
+Route::middleware(['auth'])->group(function () {
 
+    Route::get('/game/{gameId}', [GameController::class, 'show'])->name('game.show');
+    Route::post('/game/{gameId}/leave', [GameController::class, 'leave'])->name('game.leave');
+    Route::post('/game/{gameId}/state/initial', [GameController::class, 'storeInitialState'])->name('game.state.initial');
+    Route::post('/game/{gameId}/state/update', [GameController::class, 'updateState'])->name('game.state.update');
+    Route::post('/game/{gameId}/players', [GameController::class, 'storePlayers'])->name('game.players.store');
+});
 Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
     Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
