@@ -12,6 +12,8 @@ class GameController
 
     public function index(Request $request, $code){
 
-        return Inertia::render('Multiplayer');
+        return Inertia::render('Multiplayer', [
+            'code' => $code
+        ]);
     }
 }
