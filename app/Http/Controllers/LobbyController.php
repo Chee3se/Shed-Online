@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Events\LobbyUpdated;
@@ -32,7 +33,7 @@ class LobbyController
         $currentUserLobby = Lobby::where('owner_id', auth()->id())->first();
 
         return Inertia::render('Lobby', [
-            'lobbies' => $lobbies->map(fn($lobby) => [
+            'lobbies' => $lobbies ? $lobbies->map(fn($lobby) => [
                 'id' => $lobby->id,
                 'name' => $lobby->name,
                 'owner_id' => $lobby->owner_id,
@@ -40,7 +41,7 @@ class LobbyController
                 'current_players' => $lobby->current_players,
                 'max_players' => $lobby->max_players,
                 'code' => $lobby->code
-            ]),
+            ]) : [],
             'owners' => User::whereIn('id', $lobbies->pluck('owner_id'))->pluck('name', 'id'),
             'currentUserLobby' => $currentUserLobby ? [
                 'id' => $currentUserLobby->id,
@@ -90,10 +91,17 @@ class LobbyController
         return redirect()->route('lobby.show', $lobby->code);
     }
 
-    public function show($code)
+    public function show(Request $request, $code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
-        $lobby->increment('current_players');
+        if (Request::create(URL::previous())->url() !== $request->url()) {
+            $lobby->increment('current_players');
+            Broadcast::on('lobbies')
+                ->toOthers()
+                ->with($lobby)
+                ->as('lobby-updated')
+                ->sendNow();
+        }
         return Inertia::render('LobbyShow', [
             'initialLobby' => $lobby,
             'canJoin' => $lobby->current_players < $lobby->max_players,
@@ -121,7 +129,11 @@ class LobbyController
         $lobby->decrement('current_players');
 
         // Broadcast lobby update
-        broadcast(new LobbyUpdated($lobby))->toOthers();
+        Broadcast::on('lobbies')
+            ->toOthers()
+            ->with($lobby)
+            ->as('lobby-updated')
+            ->sendNow();
 
         return redirect()->route('lobby')->with('success', 'Left lobby');
     }

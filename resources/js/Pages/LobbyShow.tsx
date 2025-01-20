@@ -58,16 +58,13 @@ export default function LobbyShow({
                 }, 500);
             });
 
-
-
-
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
             axios.post(route('lobby.leave', lobby.code)).then(() => {
                 window.Echo.leave(`lobby.${lobby.code}`);
             });
         }
-    }, []);
+    }, [lobby.code]);
 
     const handleLeaveLobby = () => {
         if (lobby.owner_id === auth.user.id) {

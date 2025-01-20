@@ -30,11 +30,22 @@ export default function Lobby({
                     console.log('Removing lobby:', event.code);
                     return prevLobbies.filter((lobby: any) => lobby.code !== event.code);
                 });
+            })
+            .listen('.lobby-updated', (event: any) => {
+                setLobbies((prevLobbies: any[]) => {
+                    return prevLobbies.map((lobby: any) => {
+                        if (lobby.code === event.code) {
+                            return event;
+                        }
+                        return lobby;
+                    });
+                });
             });
 
         return () => {
             channel.stopListening('.new-lobby');
-            channel.stopListening('.lobby-deleted');  // Add this line
+            channel.stopListening('.lobby-deleted');
+            channel.stopListening('.lobby-updated');
         };
     }, []);
 
