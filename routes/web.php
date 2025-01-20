@@ -15,8 +15,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware('auth')->group(function (){
-    Route::get('/lobby/{code}/game', [LobbyController::class, 'index'])->name('lobby.game');
-    Route::post('/lobby/{code}/game', [LobbyController::class, 'store'])->name('lobby.game.players.store');
+    Route::get('/lobby/{code}/game', [GameController::class, 'index'])->name('lobby.game');
 });
 
 Route::middleware('auth')->group(function () {
@@ -24,7 +23,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
     Route::post('/lobby/store', [LobbyController::class, 'store'])->name('lobby.store');
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
-    Route::post('/lobbies/{code}/join', [LobbyController::class, 'join'])->name('lobby.join');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
 });
 

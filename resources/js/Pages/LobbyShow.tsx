@@ -21,6 +21,7 @@ export default function LobbyShow({
 }) {
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
     const [lobby, setLobby] = useState(initialLobby);
+    const [leaveOnRedirect, setLeaveOnRedirect] = useState(true);
     const [players, setPlayers] = useState<Player[]>([]);
     const [readyPlayers, setReadyPlayers] = useState<Player[]>([]);
 
@@ -51,17 +52,18 @@ export default function LobbyShow({
                         : [...prevPlayers, player];
                 });
             })
-            .listenForWhisper('game-starting', (data: { gameId: string, players: Player[], owner: number }) => {
-                setTimeout(() => {
-                    router.get(route('lobby.game', data.gameId));
-                }, 500);
-            });
+            .listenForWhisper('game-starting', () => {
+                setLeaveOnRedirect(false);
+                router.get(route('lobby.game', lobby.code));
+            })
 
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
-            axios.post(route('lobby.leave', lobby.code)).then(() => {
-                window.Echo.leave(`lobby.${lobby.code}`);
-            });
+            if (leaveOnRedirect) {
+                axios.post(route('lobby.leave', lobby.code)).then(() => {
+                    window.Echo.leave(`lobby.${lobby.code}`);
+                })
+            }
         }
     }, [lobby.code]);
 
@@ -92,20 +94,11 @@ export default function LobbyShow({
             return;
         }
 
+        setLeaveOnRedirect(false);
 
+        window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting');
 
-
-
-            window.Echo.join(`lobby.${lobby.code}`)
-                .whisper('game-starting', {
-                    gameId: lobby.code,
-                    players: players,
-                    owner: auth.user.id
-                });
-            setTimeout(() => {
-                router.get(route('lobby.game', lobby.code));
-            }, 1000);
-
+        router.get(route('lobby.game', lobby.code));
     };
 
 // Add this to your useEffect hook's channel listener setup

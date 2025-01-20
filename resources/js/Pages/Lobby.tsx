@@ -67,7 +67,7 @@ export default function Lobby({
                 <div className="w-full max-w-5xl">
                     <div className="text-center space-y-8">
                         <div className="space-y-4">
-                            <h1 className="font-['Phosphate'] font-bold text-6xl text-gray-900 tracking-wider">
+                            <h1 className="font-black text-6xl text-gray-900 tracking-wider">
                                 Shed Lobbies
                             </h1>
                             <p className="text-xl text-gray-600">
