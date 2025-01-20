@@ -52,9 +52,8 @@ export default function LobbyShow({
                 });
             })
             .listenForWhisper('game-starting', (data: { gameId: string, players: Player[], owner: number }) => {
-                // Add a small delay for non-owner players too
                 setTimeout(() => {
-                    router.get(route('game.show', data.gameId));
+                    router.get(route('lobby.game', data.gameId));
                 }, 500);
             });
 
@@ -93,28 +92,20 @@ export default function LobbyShow({
             return;
         }
 
-        // Generate game ID from lobby code
-        const gameId = lobby.code;
 
-        // First store players
-        axios.post(route('game.players.store', gameId), {
-            players: players
-        }).then(() => {
-            // Emit to all players including owner
+
+
+
             window.Echo.join(`lobby.${lobby.code}`)
                 .whisper('game-starting', {
-                    gameId: gameId,
+                    gameId: lobby.code,
                     players: players,
                     owner: auth.user.id
                 });
-
-            // Wait a moment before redirecting owner
             setTimeout(() => {
-                router.get(route('game.show', gameId));
+                router.get(route('lobby.game', lobby.code));
             }, 1000);
-        }).catch(error => {
-            console.error('Error storing players:', error);
-        });
+
     };
 
 // Add this to your useEffect hook's channel listener setup

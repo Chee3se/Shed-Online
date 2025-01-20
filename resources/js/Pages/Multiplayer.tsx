@@ -8,7 +8,7 @@ export default function Multiplayer({ auth, gameId, initialPlayers }: { auth: an
     return (
         <Layout auth={auth}>
             <Head title="Multiplayer Game" />
-
+                <h1>Hello players</h1>
         </Layout>
     );
 }

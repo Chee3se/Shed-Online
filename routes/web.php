@@ -14,14 +14,11 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
-Route::middleware(['auth'])->group(function () {
-
-    Route::get('/game/{gameId}', [GameController::class, 'show'])->name('game.show');
-    Route::post('/game/{gameId}/leave', [GameController::class, 'leave'])->name('game.leave');
-    Route::post('/game/{gameId}/state/initial', [GameController::class, 'storeInitialState'])->name('game.state.initial');
-    Route::post('/game/{gameId}/state/update', [GameController::class, 'updateState'])->name('game.state.update');
-    Route::post('/game/{gameId}/players', [GameController::class, 'storePlayers'])->name('game.players.store');
+Route::middleware('auth')->group(function (){
+    Route::get('/lobby/{code}/game', [LobbyController::class, 'index'])->name('lobby.game');
+    Route::post('/lobby/{code}/game', [LobbyController::class, 'store'])->name('lobby.game.players.store');
 });
+
 Route::middleware('auth')->group(function () {
     Route::get('/lobby', [LobbyController::class, 'index'])->name('lobby');
     Route::get('/lobby/create', [LobbyController::class, 'create'])->name('lobby.create');
