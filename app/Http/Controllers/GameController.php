@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class GameController
@@ -15,5 +16,13 @@ class GameController
         return Inertia::render('Multiplayer', [
             'code' => $code
         ]);
+    }
+
+    public function generateDeck(){
+
+        $response = Http::get('https://deckofcardsapi.com/api/deck/new/shuffle/', [
+            'deck_count' => 1
+        ]);
+        dd($response);
     }
 }
