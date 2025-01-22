@@ -1,103 +1,124 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Card as CardType } from '@/types';
 import Layout from "@/Layouts/Layout";
 import { Head } from '@inertiajs/react';
-import MyCards from '@/Components/Cards/MyCards';
-import OpponentCards from '@/Components/Cards/OpponentCards';
-import MiddlePile from '@/Components/Cards/MiddlePile';
-import RemainingPile from '@/Components/Cards/RemainingPile';
-import UsedPile from '@/Components/Cards/UsedPile';
+import axios from 'axios';
 
-const Multiplayer: React.FC = ({ auth, code }) => {
+interface Player {
+    id: number;
+    name: string;
+    faceDownCards: any[];
+    faceUpCards: any[];
+    handCards: any[];
+}
+
+export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
+    const [players, setPlayers] = useState<Player[]>([]);
     const [deckId, setDeckId] = useState<string | null>(null);
-    const [remainingCount, setRemainingCount] = useState<number>(0);
-    const [playerHandCards, setPlayerHandCards] = useState<CardType[]>([]);
-    const [playerDownCards, setPlayerDownCards] = useState<CardType[]>([]);
-    const [playerUpCards, setPlayerUpCards] = useState<CardType[]>([]);
-    const [opponentHandCards, setOpponentHandCards] = useState<CardType[]>([]);
-    const [opponentDownCards, setOpponentDownCards] = useState<CardType[]>([]);
-    const [opponentUpCards, setOpponentUpCards] = useState<CardType[]>([]);
-    const [middlePile, setMiddlePile] = useState<CardType[]>([]);
-    const [usedPile, setUsedPile] = useState<CardType[]>([]);
+    const [gameStarted, setGameStarted] = useState<boolean>(false);
 
     useEffect(() => {
-        const initializeDeck = async () => {
-            try {
-                const response = await axios.post('/generate-deck');
-                setDeckId(response.data.deck_id);
-                setRemainingCount(response.data.remaining);
-            } catch (error) {
-                console.error('Failed to create deck:', error);
-            }
+        window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
+
+        const channel = window.Echo.join(`lobby.${code}`)
+            .here((users: Player[]) => {
+                console.log('Users in the lobby:', users);
+                setPlayers(users.map(user => ({
+                    ...user,
+                    faceDownCards: [],
+                    faceUpCards: [],
+                    handCards: [],
+                })));
+
+                // Start the game if all players have joined
+                if (users.length >= 2) { // Minimum 2 players required
+                    startGame(users);
+                }
+            })
+            .joining((user: Player) => {
+                console.log('User joined:', user);
+                setPlayers((prevPlayers) => {
+                    const updatedPlayers = [
+                        ...prevPlayers,
+                        {
+                            ...user,
+                            faceDownCards: [],
+                            faceUpCards: [],
+                            handCards: [],
+                        },
+                    ];
+
+                    // Start the game if all players have joined
+                    if (updatedPlayers.length >= 2) { // Minimum 2 players required
+                        startGame(updatedPlayers);
+                    }
+
+                    return updatedPlayers;
+                });
+            })
+            .leaving((user: Player) => {
+                console.log('User left:', user);
+                setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
+            });
+
+        return () => {
+            window.Echo.leave(`lobby.${code}`);
         };
+    }, [code]);
 
-        initializeDeck();
-    }, []);
+    const startGame = async (players: Player[]) => {
+        if (gameStarted) return; // Prevent multiple starts
 
+        try {
+            // Call the backend to generate a deck and deal cards
+            const response = await axios.post('/generate-deck', {
+                players: players.map(player => player.id), // Send player IDs
+            });
 
-    useEffect(() => {
-        if (!deckId) return;
+            const { deck_id, dealt_cards } = response.data;
 
-        const dealCards = async () => {
-            try {
-                // Draw cards for the player
-                const playerCards = await drawCards(deckId, 9); // 3 face-down, 3 face-up, 3 in-hand
-                setPlayerDownCards(playerCards.slice(0, 3));
-                setPlayerUpCards(playerCards.slice(3, 6));
-                setPlayerHandCards(playerCards.slice(6, 9));
+            // Update state with the deck ID and dealt cards
+            setDeckId(deck_id);
+            setPlayers(prevPlayers => prevPlayers.map(player => ({
+                ...player,
+                faceDownCards: dealt_cards[player.id].face_down,
+                faceUpCards: dealt_cards[player.id].face_up,
+                handCards: dealt_cards[player.id].in_hand,
+            })));
 
-                // Draw cards for the opponent
-                const opponentCards = await drawCards(deckId, 9); // 3 face-down, 3 face-up, 3 in-hand
-                setOpponentDownCards(opponentCards.slice(0, 3));
-                setOpponentUpCards(opponentCards.slice(3, 6));
-                setOpponentHandCards(opponentCards.slice(6, 9));
-            } catch (error) {
-                console.error('Failed to deal cards:', error);
-            }
-        };
-
-        dealCards();
-    }, [deckId]);
-
-
-    const drawCards = async (deckId: string, count: number): Promise<CardType[]> => {
-        const response = await axios.get(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=${count}`);
-        setRemainingCount(response.data.remaining);
-        return response.data.cards;
+            // Mark the game as started
+            setGameStarted(true);
+        } catch (error) {
+            console.error('Failed to start game:', error);
+        }
     };
 
     return (
         <Layout auth={auth}>
-            <Head title="Multiplayer" />
-            <div className="flex flex-col items-center gap-5 pt-12">
-                {/* Opponent's cards */}
-                <OpponentCards
-                    handCards={opponentHandCards}
-                    downCards={opponentDownCards}
-                    upCards={opponentUpCards}
-                />
+            <Head title="Multiplayer Game" />
+            <h1>
+                Hello players {players.map((player) => player.name + " ")}
+            </h1>
 
-                {/* Middle pile, remaining pile, and used pile */}
-                <div className="flex items-center gap-6">
-                    <RemainingPile remainingCount={remainingCount} />
-                    <MiddlePile middlePile={middlePile} />
-                    <UsedPile usedPile={usedPile} />
+            {!gameStarted && (
+                <div>
+                    <h2>Waiting for players to join...</h2>
+                    <p>Players in lobby: {players.length}</p>
                 </div>
+            )}
 
-                {/* Player's cards */}
-
-                <MyCards
-                    handCards={playerHandCards}
-                    downCards={playerDownCards}
-                    upCards={playerUpCards}
-                    handleCardPlacement={(cards) => console.log('Cards placed:', cards)}
-                    isValidMove={(card) => true}
-                    disabled={false}
-                />
-            </div>
+            {gameStarted && (
+                <div>
+                    <h2>Game Started!</h2>
+                    {players.map((player) => (
+                        <div key={player.id}>
+                            <h3>{player.name}'s Cards:</h3>
+                            <p>Face Down: {player.faceDownCards.length}</p>
+                            <p>Face Up: {player.faceUpCards.length}</p>
+                            <p>In Hand: {player.handCards.length}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
         </Layout>
     );
-};
-
-export default Multiplayer;
+}

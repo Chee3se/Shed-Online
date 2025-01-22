@@ -41,7 +41,6 @@ export default function LobbyShow({
                 setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
                 setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
-
             .listenForWhisper('lobby-deleted', () => {router.get(route('lobby'));})
             .listenForWhisper('ready-toggle', (player: Player) => {
                 setReadyPlayers((prevPlayers) => {
@@ -55,16 +54,16 @@ export default function LobbyShow({
             .listenForWhisper('game-starting', () => {
                 setLeaveOnRedirect(false);
                 router.get(route('lobby.game', lobby.code));
-            })
+            });
 
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
             if (leaveOnRedirect) {
                 axios.post(route('lobby.leave', lobby.code)).then(() => {
                     window.Echo.leave(`lobby.${lobby.code}`);
-                })
+                });
             }
-        }
+        };
     }, [lobby.code]);
 
     const handleLeaveLobby = () => {
@@ -96,11 +95,15 @@ export default function LobbyShow({
 
         setLeaveOnRedirect(false);
 
-        window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting');
+        // Reset state
+        setPlayers([]);
+        setReadyPlayers([]);
 
-        router.get(route('lobby.game', lobby.code));
+        window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting', {}, () => {
+            // Ensure state is updated before redirecting
+            router.get(route('lobby.game', lobby.code));
+        });
     };
-
 
 
     const ownerIsPresent = players.some(p => p.id === lobby.owner_id);
