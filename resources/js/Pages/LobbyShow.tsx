@@ -101,7 +101,7 @@ export default function LobbyShow({
         router.get(route('lobby.game', lobby.code));
     };
 
-// Add this to your useEffect hook's channel listener setup
+
 
     const ownerIsPresent = players.some(p => p.id === lobby.owner_id);
     const areAllPlayersReady = players.length === (readyPlayers.length + (ownerIsPresent ? 1 : 0));

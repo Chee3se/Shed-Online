@@ -16,6 +16,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function (){
     Route::get('/lobby/{code}/game', [GameController::class, 'index'])->name('lobby.game');
+    Route::post('/generate-deck', [GameController::class, 'generateDeck'])->name('lobby.deck.generate');
     // Routes for game actions
 
     // Play a card
