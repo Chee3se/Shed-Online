@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Layout from "@/Layouts/Layout";
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -13,7 +13,7 @@ interface Player {
 
 export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
     const [players, setPlayers] = useState<Player[]>([{ id: auth.user.id, name: auth.user.name, faceDownCards: [], faceUpCards: [], handCards: [] }]);
-    const [deckId, setDeckId] = useState<string | null>(null);
+    const deckId = useRef<string>('123456789');
     const [gameStarted, setGameStarted] = useState<boolean>(false);
 
     useEffect(() => {
@@ -29,8 +29,8 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                     handCards: [],
                 })));
 
-                // Start the game if all players have joined
-                if (users.length >= 2) { // Minimum 2 players required
+
+                if (users.length >= 2) {
                     startGame(users);
                 }
             })
@@ -47,8 +47,8 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         },
                     ];
 
-                    // Start the game if all players have joined
-                    if (updatedPlayers.length >= 2) { // Minimum 2 players required
+
+                    if (updatedPlayers.length >= 2 && auth.user.id === lobby.owner_id) {
                         startGame(updatedPlayers);
                     }
 
@@ -58,7 +58,11 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             .leaving((user: Player) => {
                 console.log('User left:', user);
                 setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
-            });
+            })
+        .listen('.generate-deck', ({ deck_id }: { deck_id: string }) => {
+            deckId.current = deck_id;
+            setGameStarted(true);
+        })
 
         return () => {
             window.Echo.leave(`lobby.${code}`);
@@ -66,27 +70,10 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     }, [code]);
 
     const startGame = async (players: Player[]) => {
-        if (gameStarted) return; // Prevent multiple starts
-
+        if (gameStarted) return;
         try {
-            // Call the backend to generate a deck and deal cards
-            const response = await axios.post('/generate-deck', {
-                players: players.map(player => player.id), // Send player IDs
-            });
+            const response = await axios.post('/generate-deck');
 
-            const { deck_id, dealt_cards } = response.data;
-
-            // Update state with the deck ID and dealt cards
-            setDeckId(deck_id);
-            setPlayers(prevPlayers => prevPlayers.map(player => ({
-                ...player,
-                faceDownCards: dealt_cards[player.id].face_down,
-                faceUpCards: dealt_cards[player.id].face_up,
-                handCards: dealt_cards[player.id].in_hand,
-            })));
-
-            // Mark the game as started
-            setGameStarted(true);
         } catch (error) {
             console.error('Failed to start game:', error);
         }
