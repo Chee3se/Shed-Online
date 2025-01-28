@@ -59,10 +59,10 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 console.log('User left:', user);
                 setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
-        .listen('.generate-deck', ({ deck_id }: { deck_id: string }) => {
+        .listen('.deck-generated', ({ deck_id }: { deck_id: string }) => {
             deckId.current = deck_id;
             setGameStarted(true);
-            console.log('Deck ID:', deckId);
+            console.log('Deck ID:', deck_id);
         })
 
         return () => {

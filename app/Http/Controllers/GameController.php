@@ -25,16 +25,18 @@ class GameController
 
     public function generateDeck(Request $request)
     {
-
         $response = Http::withOptions([
-                'verify' => false,
+            'verify' => false,
         ])->get('https://deckofcardsapi.com/api/deck/new/shuffle/', [
-                'deck_count' => 1,
+            'deck_count' => 1,
         ]);
 
-        $deckId = $response->json()['deck_id'];
+        $deck_id = $response->json()['deck_id'];
 
-        Broadcast::on('lobby.'. $request->code)->as('generate-deck')->with($deckId)->sendNow();
-
+        Broadcast::presence('lobby.'.$request->code)
+            ->broadcastToEveryone()
+            ->with(['deck_id' => $deck_id])
+            ->as('deck-generated')
+            ->sendNow();
     }
 }
