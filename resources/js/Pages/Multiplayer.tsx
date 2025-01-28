@@ -2,13 +2,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import Layout from "@/Layouts/Layout";
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
+import card from "@/Components/Cards/Card";
+import { Card, DeckResponse, DrawResponse } from '@/types';
 
 interface Player {
     id: number;
     name: string;
-    faceDownCards: any[];
-    faceUpCards: any[];
-    handCards: any[];
+    faceDownCards: Card[];
+    faceUpCards: Card[];
+    handCards: Card[];
 }
 
 export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
@@ -30,7 +32,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 })));
 
 
-                if (users.length >= 2) {
+                if (users.length >= 2 && auth.user.id === lobby.owner_id) {
                     startGame(users);
                 }
             })
@@ -65,6 +67,8 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             console.log('Deck ID:', deck_id);
         })
 
+
+
         return () => {
             window.Echo.leave(`lobby.${code}`);
         };
@@ -78,6 +82,43 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             console.error('Failed to start game:', error);
         }
     };
+
+    const drawCards = async (count: number) => {
+        if (deckId) {
+            const response = await axios.post<DrawResponse>('/cards/${code}/draw', {count: 3});
+            return response.data.cards;
+        }
+        return [];
+    }
+
+    useEffect(() => {
+        const dealCards = async () => {
+
+            const playerDown = await drawCards(3);
+            const playerUp = await drawCards(3);
+            const playerHand = await drawCards(3);
+
+
+            setPlayers((prevPlayers) => {
+                return prevPlayers.map((player) => {
+                    if (player.id === auth.user.id) {
+                        return {
+                            ...player,
+                            faceDownCards: playerDown,
+                            faceUpCards: playerUp,
+                            handCards: playerHand,
+                        };
+                    }
+                    return player;
+                });
+            });
+
+
+        };
+        if (deckId) {
+            dealCards();
+        }
+    }, [deckId]);
 
     return (
         <Layout auth={auth}>

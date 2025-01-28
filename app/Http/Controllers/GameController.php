@@ -39,4 +39,21 @@ class GameController
             ->as('deck-generated')
             ->sendNow();
     }
+
+    public function draw(Request $request, $code){
+
+        $response = Http::withOptions([
+            'verify' => false,
+        ])->get('https://deckofcardsapi.com/api/deck/'.$request->deck_id.'/draw/?count='.$request->count);
+
+        $cards = $response->json()['cards'];
+
+        Broadcast::presence('lobby.'.$request->code)
+            ->toOthers()
+            ->with(['cards' => $cards->count()])
+            ->as('card-drawn')
+            ->sendNow();
+
+        return $cards;
+    }
 }
