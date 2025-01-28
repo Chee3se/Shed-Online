@@ -99,10 +99,9 @@ export default function LobbyShow({
         setPlayers([]);
         setReadyPlayers([]);
 
-        window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting', {}, () => {
-            // Ensure state is updated before redirecting
+        if (window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting')) {
             router.get(route('lobby.game', lobby.code));
-        });
+        }
     };
 
 

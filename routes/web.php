@@ -6,6 +6,7 @@ use App\Http\Controllers\LobbyController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Lobby;
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
-Route::middleware('auth')->group(function (){
+Route::middleware([ValidateCsrfToken::class, 'auth'])->group(function (){
     Route::get('/lobby/{code}/game', [GameController::class, 'index'])->name('lobby.game');
     Route::post('/generate-deck', [GameController::class, 'generateDeck'])->name('lobby.deck.generate');
     // Routes for game actions
