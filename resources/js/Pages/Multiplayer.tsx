@@ -62,6 +62,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         .listen('.generate-deck', ({ deck_id }: { deck_id: string }) => {
             deckId.current = deck_id;
             setGameStarted(true);
+            console.log('Deck ID:', deckId);
         })
 
         return () => {
@@ -72,8 +73,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const startGame = async (players: Player[]) => {
         if (gameStarted) return;
         try {
-            const response = await axios.post('/generate-deck');
-
+            const response = await axios.post('/generate-deck', {code:code});
         } catch (error) {
             console.error('Failed to start game:', error);
         }

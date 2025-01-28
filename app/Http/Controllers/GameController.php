@@ -23,7 +23,7 @@ class GameController
         ]);
     }
 
-    public function generateDeck(Request $request, $code)
+    public function generateDeck(Request $request)
     {
 
         $response = Http::withOptions([
@@ -34,7 +34,7 @@ class GameController
 
         $deckId = $response->json()['deck_id'];
 
-        Broadcast::on('lobby.'. $code)->as('generate-deck')->with($deckId)->sendNow();
+        Broadcast::on('lobby.'. $request->code)->as('generate-deck')->with($deckId)->sendNow();
 
     }
 }
