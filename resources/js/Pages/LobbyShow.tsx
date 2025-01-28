@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link, useForm, router } from "@inertiajs/react";
 import Layout from '../Layouts/Layout';
 import axios from "axios";
@@ -21,7 +21,7 @@ export default function LobbyShow({
 }) {
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
     const [lobby, setLobby] = useState(initialLobby);
-    const [leaveOnRedirect, setLeaveOnRedirect] = useState(true);
+    const leaveOnRedirect = useRef(true);
     const [players, setPlayers] = useState<Player[]>([]);
     const [readyPlayers, setReadyPlayers] = useState<Player[]>([]);
 
@@ -52,13 +52,19 @@ export default function LobbyShow({
                 });
             })
             .listenForWhisper('game-starting', () => {
-                setLeaveOnRedirect(false);
+
+                leaveOnRedirect.current = false;
+
+                setPlayers([]);
+                setReadyPlayers([]);
+
                 router.get(route('lobby.game', lobby.code));
+
             });
 
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
-            if (leaveOnRedirect) {
+            if (leaveOnRedirect.current) {
                 axios.post(route('lobby.leave', lobby.code)).then(() => {
                     window.Echo.leave(`lobby.${lobby.code}`);
                 });
@@ -93,7 +99,7 @@ export default function LobbyShow({
             return;
         }
 
-        setLeaveOnRedirect(false);
+        leaveOnRedirect.current = false;
 
         // Reset state
         setPlayers([]);

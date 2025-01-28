@@ -12,7 +12,7 @@ interface Player {
 }
 
 export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
-    const [players, setPlayers] = useState<Player[]>([]);
+    const [players, setPlayers] = useState<Player[]>([{ id: auth.user.id, name: auth.user.name, faceDownCards: [], faceUpCards: [], handCards: [] }]);
     const [deckId, setDeckId] = useState<string | null>(null);
     const [gameStarted, setGameStarted] = useState<boolean>(false);
 
