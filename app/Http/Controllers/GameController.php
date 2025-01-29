@@ -48,12 +48,32 @@ class GameController
 
         $cards = $response->json()['cards'];
 
-        Broadcast::presence('lobby.'.$request->code)
+        Broadcast::presence('lobby.'.$code)
             ->toOthers()
             ->with(['cards' => $cards->count()])
             ->as('card-drawn')
             ->sendNow();
 
         return $cards;
+    }
+
+    public function play(Request $request, $code){
+        Broadcast::presence('lobby.'.$code)
+            ->toOthers()
+            ->with(['cards' => $request->cards])
+            ->as('card-played')
+            ->sendNow();
+
+        return $request->cards;
+    }
+
+    public function take(Request $request, $code){
+        Broadcast::presence('lobby.'.$code)
+            ->toOthers()
+            ->with(['cards' => $request->cards])
+            ->as('card-taken')
+            ->sendNow();
+
+        return $request->cards;
     }
 }

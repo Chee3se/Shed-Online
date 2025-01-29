@@ -18,13 +18,8 @@ Route::get('/', function () {
 Route::middleware([ValidateCsrfToken::class, 'auth'])->group(function (){
     Route::get('/lobby/{code}/game', [GameController::class, 'index'])->name('lobby.game');
     Route::post('/generate-deck', [GameController::class, 'generateDeck'])->name('lobby.deck.generate');
-    // Routes for game actions
-
-    // Play a card
     Route::post('/cards/{code}/play', [GameController::class, 'play'])->name('cards.play');
-    // Takes a card from the deck
     Route::post('/cards/{code}/draw', [GameController::class, 'draw'])->name('cards.draw');
-    // Takes the cards from the pile
     Route::post('/cards/{code}/take', [GameController::class, 'take'])->name('cards.take');
 });
 
