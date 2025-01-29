@@ -4,6 +4,8 @@ import { Head } from '@inertiajs/react';
 import axios from 'axios';
 import card from "@/Components/Cards/Card";
 import { Card, DeckResponse, DrawResponse } from '@/types';
+import MyCards from '@/Components/Cards/MyCards';
+import OpponentCards from '@/Components/Cards/OpponentCards';
 
 interface Player {
     id: number;
@@ -17,6 +19,15 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const [players, setPlayers] = useState<Player[]>([{ id: auth.user.id, name: auth.user.name, faceDownCards: [], faceUpCards: [], handCards: [] }]);
     const deckId = useRef<string>('123456789');
     const [gameStarted, setGameStarted] = useState<boolean>(false);
+
+    const handleCardPlacement = (card: Card | Card[], player: 'player' | 'bot') => {
+        console.log('Card played:', card);
+
+    };
+
+    const isValidMove = (card: Card): boolean => {
+        return true;
+    };
 
     useEffect(() => {
         window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
@@ -83,70 +94,95 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         }
     };
 
-    const drawCards = async (count: number) => {
-        if (deckId) {
-            const response = await axios.post<DrawResponse>('/cards/${code}/draw', {count: 3});
+    const drawCards = async (count: number): Promise<Card[]> => {
+        console.log('Drawing cards with deck_id:', deckId.current);
+        try {
+
+            const response = await axios.post<DrawResponse>(`/cards/${code}/draw`, {
+                deck_id: deckId.current,
+                count: count
+            });
+
             return response.data.cards;
+        } catch (error) {
+            console.error('Error drawing cards:', error);
+            return [];
         }
-        return [];
-    }
+    };
 
     useEffect(() => {
         const dealCards = async () => {
+            try {
+                const playerDown = await drawCards(3);
+                const playerUp = await drawCards(3);
+                const playerHand = await drawCards(3);
 
-            const playerDown = await drawCards(3);
-            const playerUp = await drawCards(3);
-            const playerHand = await drawCards(3);
-
-
-            setPlayers((prevPlayers) => {
-                return prevPlayers.map((player) => {
-                    if (player.id === auth.user.id) {
-                        return {
-                            ...player,
-                            faceDownCards: playerDown,
-                            faceUpCards: playerUp,
-                            handCards: playerHand,
-                        };
-                    }
-                    return player;
+                setPlayers((prevPlayers) => {
+                    return prevPlayers.map((player) => {
+                        if (player.id === auth.user.id) {
+                            const updatedPlayer = {
+                                ...player,
+                                faceDownCards: playerDown,
+                                faceUpCards: playerUp,
+                                handCards: playerHand,
+                            };
+                            console.log('Updated player state:', updatedPlayer);
+                            return updatedPlayer;
+                        }
+                        return player;
+                    });
                 });
-            });
-
-
+            } catch (error) {
+                console.error('Error in dealCards:', error);
+            }
         };
-        if (deckId) {
+
+        if (deckId.current && gameStarted) {
+            console.log('Dealing cards with deck_id:', deckId.current);
             dealCards();
         }
-    }, [deckId]);
+    }, [deckId.current, gameStarted]);
 
     return (
         <Layout auth={auth}>
             <Head title="Multiplayer Game" />
-            <h1>
-                Hello players {players.map((player) => player.name + " ")}
-            </h1>
+            <div className="p-6">
+                {!gameStarted && (
+                    <div>
+                        <h2>Waiting for players to join...</h2>
+                        <p>Players in lobby: {players.length}</p>
+                    </div>
+                )}
 
-            {!gameStarted && (
-                <div>
-                    <h2>Waiting for players to join...</h2>
-                    <p>Players in lobby: {players.length}</p>
-                </div>
-            )}
+                {gameStarted && (
+                    <div className="space-y-6">
+                        {/* Other players' cards */}
+                        {players.filter(player => player.id !== auth.user.id).map((player) => (
+                            <div key={player.id}>
+                                <h3 className="font-medium mb-2">{player.name}'s Cards</h3>
+                                <OpponentCards
+                                    handCards={player.handCards} // Empty array since we don't show hand cards
+                                    downCards={player.faceDownCards} // Show face down cards
+                                    upCards={player.faceUpCards} // Show face up cards
+                                />
+                            </div>
+                        ))}
 
-            {gameStarted && (
-                <div>
-                    <h2>Game Started!</h2>
-                    {players.map((player) => (
-                        <div key={player.id}>
-                            <h3>{player.name}'s Cards:</h3>
-                            <p>Face Down: {player.faceDownCards.length}</p>
-                            <p>Face Up: {player.faceUpCards.length}</p>
-                            <p>In Hand: {player.handCards.length}</p>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        {/* Current player's cards */}
+                        {players.map((player) => player.id === auth.user.id && (
+                            <div key={player.id}>
+                                <MyCards
+                                    handCards={player.handCards}
+                                    downCards={player.faceDownCards}
+                                    upCards={player.faceUpCards}
+                                    handleCardPlacement={handleCardPlacement}
+                                    isValidMove={isValidMove}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </Layout>
     );
 }

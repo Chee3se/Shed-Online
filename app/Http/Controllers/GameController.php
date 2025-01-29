@@ -41,7 +41,6 @@ class GameController
     }
 
     public function draw(Request $request, $code){
-
         $response = Http::withOptions([
             'verify' => false,
         ])->get('https://deckofcardsapi.com/api/deck/'.$request->deck_id.'/draw/?count='.$request->count);
@@ -50,11 +49,13 @@ class GameController
 
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $cards->count()])
+            ->with(['cards' => count($cards)])
             ->as('card-drawn')
             ->sendNow();
 
-        return $cards;
+        return response()->json([
+            'cards' => $cards
+        ]);
     }
 
     public function play(Request $request, $code){
@@ -70,7 +71,6 @@ class GameController
     public function take(Request $request, $code){
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $request->cards])
             ->as('card-taken')
             ->sendNow();
 
