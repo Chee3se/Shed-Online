@@ -72,10 +72,7 @@ class GameController
             ->as('card-drawn')
             ->sendNow();
 
-        return response()->json([
-            'cards' => $cards,
-            'remaining' => $response->json()['remaining']
-        ]);
+        return $cards;
     }
 
     public function play(Request $request, $code)

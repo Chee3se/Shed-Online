@@ -118,7 +118,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 count: count,
             });
             console.log('Draw response:', response.data);
-            return response.data.cards;
+            return response.data;
         } catch (error) {
             console.error('Error drawing cards:', error);
             return [];
