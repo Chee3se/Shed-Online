@@ -30,16 +30,6 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     };
 
     useEffect(() => {
-        // Check localStorage for existing game state
-        const savedDeckId = localStorage.getItem('deckId');
-        const savedGameCode = localStorage.getItem('gameCode');
-
-        if (savedDeckId && savedGameCode === code) {
-            deckId.current = savedDeckId;
-            setGameStarted(true);
-        } else {
-            generateNewDeck();
-        }
 
         window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
 
