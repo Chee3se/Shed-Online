@@ -85,9 +85,10 @@ class GameController
             'cards.*.code' => 'required|string',
         ]);
         $cards = $request->get('cards');
+        $id = auth()->id();
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $cards, 'player_id' => auth()->id()])
+            ->with(['cards' => $cards, 'player_id' => $id])
             ->as('card-played')
             ->sendNow();
 

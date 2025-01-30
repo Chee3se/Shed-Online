@@ -20,9 +20,9 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const [gameStarted, setGameStarted] = useState<boolean>(false);
     const [cardsDealt, setCardsDealt] = useState<boolean>(false); // Add this to track if cards have been dealt
 
-    const handleCardPlacement = (card: Card | Card[], player: 'player' | 'bot') => {
+    const handleCardPlacement = async (card: Card | Card[], player: 'player' | 'bot') => {
         console.log('Card played:', card);
-        // Add your card placement logic here
+        await axios.post(`/cards/${code}/play`, { cards: [card] });
     };
 
     const isValidMove = (card: Card): boolean => {
@@ -83,6 +83,13 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             deckId.current = deck_id;
             localStorage.setItem('deckId', deck_id);
             setGameStarted(true);
+        });
+
+        channel.listen('.card-played', ({ cards, player_id }: { cards: Card[], player_id: number }) => {
+            console.log('Card played:', cards, 'by player:', player_id);
+        })
+        channel.listen('.cards-drawn', ({ cards }: { cards: Card[] }) => {
+            console.log('Cards drawn:', cards);
         });
 
         return () => {
