@@ -15,10 +15,16 @@ interface Player {
 
 export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
     const [players, setPlayers] = useState<Player[]>([{ id: auth.user.id, name: auth.user.name, faceDownCards: [], faceUpCards: [], handCards: [] }]);
-    const deckId = useRef<string>('123456789');
+    const deckId = useRef<string>('');
     const [gameStarted, setGameStarted] = useState<boolean>(false);
 
     useEffect(() => {
+        const savedDeckId = localStorage.getItem('deckId');
+        if (savedDeckId) {
+            deckId.current = savedDeckId;
+            setGameStarted(true);
+        }
+
         window.axios.defaults.headers.common['X-Socket-ID'] = window.Echo.socketId();
 
         const channel = window.Echo.join(`lobby.${code}`)
@@ -63,8 +69,18 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             })
         .listen('.deck-generated', ({ deck_id }: { deck_id: string }) => {
             deckId.current = deck_id;
+            localStorage.setItem('deckId', deck_id); // Save to localStorage
             setGameStarted(true);
             console.log('Deck ID:', deck_id);
+        })
+        .listen('.card-drawn', ({ player_id, card }: { player_id: number; card: Card }) => {
+            console.log('Card drawn:', card);
+        })
+        .listen('.card-played', ({ player_id, card }: { player_id: number; card: Card }) => {
+            console.log('Card played:', card);
+        })
+        .listen('.card-taken', ({ player_id, card }: { player_id: number; card: Card }) => {
+            console.log('Card taken:', card);
         })
 
 
@@ -77,7 +93,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const startGame = async (players: Player[]) => {
         if (gameStarted) return;
         try {
-            const response = await axios.post('/generate-deck', {code:code});
+            const response = await axios.post('/generate-deck', {code:code, deck_id: deckId?.current});
         } catch (error) {
             console.error('Failed to start game:', error);
         }
@@ -85,8 +101,8 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
 
     const drawCards = async (count: number) => {
         if (deckId) {
-            const response = await axios.post<DrawResponse>('/cards/${code}/draw', {count: 3});
-            return response.data.cards;
+            const response = await axios.post<DrawResponse>(`/cards/${code}/draw`, {count: 3, deck_id: deckId.current});
+            console.log('Drawn cards:', response.data);
         }
         return [];
     }

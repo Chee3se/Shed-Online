@@ -25,6 +25,12 @@ class GameController
 
     public function generateDeck(Request $request)
     {
+        $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        if ($request->get("deck_id")) {return;}
+
         $response = Http::withOptions([
             'verify' => false,
         ])->get('https://deckofcardsapi.com/api/deck/new/shuffle/', [
@@ -38,9 +44,16 @@ class GameController
             ->with(['deck_id' => $deck_id])
             ->as('deck-generated')
             ->sendNow();
+
+        return;
     }
 
-    public function draw(Request $request, $code){
+    public function draw(Request $request, $code)
+    {
+        $request->validate([
+            'deck_id' => 'required|string',
+            'count' => 'required|integer',
+        ]);
 
         $response = Http::withOptions([
             'verify' => false,
@@ -50,30 +63,42 @@ class GameController
 
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $cards->count()])
+            ->with(['cards' => count($cards), 'player_id' => auth()->id()])
             ->as('card-drawn')
             ->sendNow();
 
         return $cards;
     }
 
-    public function play(Request $request, $code){
+    public function play(Request $request, $code)
+    {
+        $request->validate([
+            'cards' => 'required|array',
+            'cards.*.code' => 'required|string',
+        ]);
+        $cards = $request->get('cards');
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $request->cards])
+            ->with(['cards' => $cards, 'player_id' => auth()->id()])
             ->as('card-played')
             ->sendNow();
 
-        return $request->cards;
+        return $cards;
     }
 
-    public function take(Request $request, $code){
+    public function take(Request $request, $code)
+    {
+        $request->validate([
+            'cards' => 'required|array',
+            'cards.*.code' => 'required|string',
+        ]);
+        $cards = $request->get('cards');
         Broadcast::presence('lobby.'.$code)
             ->toOthers()
-            ->with(['cards' => $request->cards])
+            ->with(['cards' => $cards->count(), 'player_id' => auth()->id()])
             ->as('card-taken')
             ->sendNow();
 
-        return $request->cards;
+        return $cards;
     }
 }
