@@ -4,21 +4,21 @@ import Card from './Card';
 import { Card as CardType } from '@/types';
 
 interface MyCardsProps {
-    handCards: CardType[];
-    downCards: CardType[];
-    upCards: CardType[];
+    handCards?: CardType[];
+    downCards?: CardType[];
+    upCards?: CardType[];
     handleCardPlacement: (cards: CardType | CardType[], player: 'player' | 'bot') => void;
     isValidMove: (card: CardType) => boolean;
     disabled?: boolean;
 }
 
 const MyCards: React.FC<MyCardsProps> = ({
-                                             handCards,
-                                             downCards,
-                                             upCards,
+                                             handCards = [],
+                                             downCards = [],
+                                             upCards = [],
                                              handleCardPlacement,
                                              isValidMove,
-                                             disabled
+                                             disabled = false
                                          }) => {
     const [hoveredCard, setHoveredCard] = useState<string | null>(null);
     const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
@@ -30,9 +30,8 @@ const MyCards: React.FC<MyCardsProps> = ({
                 setIsShiftPressed(true);
             }
 
-            // Handle space key for placing selected cards
             if (e.code === 'Space' && isShiftPressed && selectedCards.length > 0) {
-                e.preventDefault(); // Prevent default space key behavior
+                e.preventDefault();
                 handleCardPlacement(selectedCards, 'player');
                 setSelectedCards([]);
             }
@@ -54,7 +53,7 @@ const MyCards: React.FC<MyCardsProps> = ({
         };
     }, [isShiftPressed, selectedCards, handleCardPlacement]);
 
-    const cardGroups = handCards.reduce((acc, card) => {
+    const cardGroups = (handCards || []).reduce((acc, card) => {
         if (!acc[card.value]) {
             acc[card.value] = [];
         }
@@ -82,48 +81,55 @@ const MyCards: React.FC<MyCardsProps> = ({
     };
 
     const handleCardClick = (card: CardType) => {
+        if (disabled) return;
+
         if (isShiftPressed) {
             const isCardAlreadySelected = selectedCards.includes(card);
 
             if (isCardAlreadySelected) {
-                // If the card is already selected, remove it
                 setSelectedCards(prevSelected =>
                     prevSelected.filter(selectedCard => selectedCard !== card)
                 );
             } else {
-                // If the card is not selected, check if it matches the existing selection's value
                 const hasExistingSelection = selectedCards.length > 0;
 
                 if (!hasExistingSelection || selectedCards[0].value === card.value) {
-                    // Add the card to selected cards
                     setSelectedCards(prevSelected => [...prevSelected, card]);
                 }
             }
         } else {
-            // Single card placement - always allow placement and let handleCardPlacement handle invalid moves
             handleCardPlacement(card, 'player');
         }
     };
 
     return (
         <div className="flex flex-col items-center gap-2">
-            <div className="">
-                {isShiftPressed && selectedCards.length > 0 && (
+            {isShiftPressed && selectedCards.length > 0 && (
+                <div className="">
                     <MultiCardNotification
                         message={`Press SPACE to place ${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} (${selectedCards[0].value}'s)`}
                         isVisible={true}
                     />
-                )}
-            </div>
+                </div>
+            )}
 
             <div className="flex gap-2">
-                {downCards.map((card, index) => (
+                {(downCards || []).map((card, index) => (
                     <div key={index} className="relative w-24 h-36">
                         <Card
-                            card={{ code: 'back', image: 'https://deckofcardsapi.com/static/img/back.png', images: { png: 'https://deckofcardsapi.com/static/img/back.png', svg: '' }, value: '', suit: '' }}
+                            card={{
+                                code: 'back',
+                                image: 'https://deckofcardsapi.com/static/img/back.png',
+                                images: {
+                                    png: 'https://deckofcardsapi.com/static/img/back.png',
+                                    svg: ''
+                                },
+                                value: '',
+                                suit: ''
+                            }}
                             cardType="down"
                         />
-                        {upCards[index] && (
+                        {upCards?.[index] && (
                             <Card
                                 card={upCards[index]}
                                 className="top-5"
@@ -138,8 +144,9 @@ const MyCards: React.FC<MyCardsProps> = ({
                     </div>
                 ))}
             </div>
+
             <div className="relative w-72 h-36 flex justify-center">
-                {handCards.map((card, index) => (
+                {(handCards || []).map((card, index) => (
                     <Card
                         key={card.code}
                         card={card}
