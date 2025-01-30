@@ -29,21 +29,26 @@ class GameController
             'code' => 'required|string',
         ]);
 
-        if ($request->get("deck_id")) {return;}
+        $currentCode = $request->code;
+        $previousCode = session('game_code');
 
-        $response = Http::withOptions([
-            'verify' => false,
-        ])->get('https://deckofcardsapi.com/api/deck/new/shuffle/', [
-            'deck_count' => 1,
-        ]);
+        if ($currentCode !== $previousCode) {
+            $response = Http::withOptions([
+                'verify' => false,
+            ])->get('https://deckofcardsapi.com/api/deck/new/shuffle/', [
+                'deck_count' => 1,
+            ]);
 
-        $deck_id = $response->json()['deck_id'];
+            $deck_id = $response->json()['deck_id'];
 
-        Broadcast::presence('lobby.'.$request->code)
-            ->broadcastToEveryone()
-            ->with(['deck_id' => $deck_id])
-            ->as('deck-generated')
-            ->sendNow();
+            Broadcast::presence('lobby.' . $currentCode)
+                ->broadcastToEveryone()
+                ->with(['deck_id' => $deck_id])
+                ->as('deck-generated')
+                ->sendNow();
+
+            session(['game_code' => $currentCode]);
+        }
 
         return;
     }
