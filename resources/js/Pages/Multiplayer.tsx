@@ -108,10 +108,10 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         try {
             const response = await axios.post<Card[]>(`/cards/${code}/draw`, {
                 deck_id: deckId.current,
-                count: 3
+                count: count,
             });
             console.log('Draw response:', response.data);
-            return response.data.cards; // Now directly using the array
+            return response.data.cards;
         } catch (error) {
             console.error('Error drawing cards:', error);
             return [];
@@ -122,18 +122,14 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     useEffect(() => {
         const dealCards = async () => {
             try {
-                console.log('Starting to deal cards');
+
                 const playerDown = await drawCards(3);
-                console.log('Drew face down cards:', playerDown);
                 const playerUp = await drawCards(3);
-                console.log('Drew face up cards:', playerUp);
                 const playerHand = await drawCards(3);
-                console.log('Drew hand cards:', playerHand);
 
                 setPlayers(prevPlayers => {
                     const newPlayers = prevPlayers.map(player => {
                         if (player.id === auth.user.id) {
-                            console.log('Updating player cards:', player.name);
                             return {
                                 ...player,
                                 faceDownCards: playerDown,
@@ -143,7 +139,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         }
                         return player;
                     });
-                    console.log('New players state:', newPlayers);
+
                     return newPlayers;
                 });
                 setCardsDealt(true);
