@@ -4,6 +4,7 @@ import { Head } from '@inertiajs/react';
 import axios from 'axios';
 import card from "@/Components/Cards/Card";
 import { Card, DeckResponse, DrawResponse } from '@/types';
+import MyCards from "@/Components/Cards/MyCards";
 
 interface Player {
     id: number;
@@ -17,8 +18,19 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const [players, setPlayers] = useState<Player[]>([{ id: auth.user.id, name: auth.user.name, faceDownCards: [], faceUpCards: [], handCards: [] }]);
     const deckId = useRef<string>('');
     const [gameStarted, setGameStarted] = useState<boolean>(false);
+    const [cardsDealt, setCardsDealt] = useState<boolean>(false); // Add this to track if cards have been dealt
+
+    const handleCardPlacement = (card: Card | Card[], player: 'player' | 'bot') => {
+        console.log('Card played:', card);
+        // Add your card placement logic here
+    };
+
+    const isValidMove = (card: Card): boolean => {
+        return true;
+    };
 
     useEffect(() => {
+        // Check localStorage for existing game state
         const savedDeckId = localStorage.getItem('deckId');
         const savedGameCode = localStorage.getItem('gameCode');
 
@@ -41,14 +53,13 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                     handCards: [],
                 })));
 
-
                 if (users.length >= 2 && auth.user.id === lobby.owner_id) {
                     startGame(users);
                 }
             })
             .joining((user: Player) => {
                 console.log('User joined:', user);
-                setPlayers((prevPlayers) => {
+                setPlayers(prevPlayers => {
                     const updatedPlayers = [
                         ...prevPlayers,
                         {
@@ -59,7 +70,6 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         },
                     ];
 
-
                     if (updatedPlayers.length >= 2 && auth.user.id === lobby.owner_id) {
                         startGame(updatedPlayers);
                     }
@@ -69,25 +79,16 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             })
             .leaving((user: Player) => {
                 console.log('User left:', user);
-                setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
-            })
-        .listen('.deck-generated', ({ deck_id }: { deck_id: string }) => {
+                setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== user.id));
+            });
+
+
+        channel.listen('.deck-generated', ({ deck_id }: { deck_id: string }) => {
+            console.log('Deck generated:', deck_id);
             deckId.current = deck_id;
-            localStorage.setItem('deckId', deck_id); // Save to localStorage
+            localStorage.setItem('deckId', deck_id);
             setGameStarted(true);
-            console.log('Deck ID:', deck_id);
-        })
-        .listen('.card-drawn', ({ player_id, card }: { player_id: number; card: Card }) => {
-            console.log('Card drawn:', card);
-        })
-        .listen('.card-played', ({ player_id, card }: { player_id: number; card: Card }) => {
-            console.log('Card played:', card);
-        })
-        .listen('.card-taken', ({ player_id, card }: { player_id: number; card: Card }) => {
-            console.log('Card taken:', card);
-        })
-
-
+        });
 
         return () => {
             window.Echo.leave(`lobby.${code}`);
@@ -97,54 +98,74 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const startGame = async (players: Player[]) => {
         if (gameStarted) return;
         try {
-            const response = await axios.post('/generate-deck', {code:code, deck_id: deckId?.current});
+            await axios.post('/generate-deck', { code, deck_id: deckId.current });
         } catch (error) {
             console.error('Failed to start game:', error);
         }
     };
 
-    const drawCards = async (count: number) => {
-        if (deckId) {
-            const response = await axios.post<DrawResponse>(`/cards/${code}/draw`, {count: 3, deck_id: deckId.current});
-            console.log('Drawn cards:', response.data);
+    const drawCards = async (count: number): Promise<Card[]> => {
+        if (!deckId.current) {
+            console.error('No deck ID available');
+            return [];
         }
-        return [];
-    }
+
+        try {
+            const response = await axios.post<Card[]>(`/cards/${code}/draw`, {
+                deck_id: deckId.current,
+                count: 3
+            });
+            console.log('Draw response:', response.data);
+            return response.data.cards; // Now directly using the array
+        } catch (error) {
+            console.error('Error drawing cards:', error);
+            return [];
+        }
+    };
+
 
     useEffect(() => {
         const dealCards = async () => {
+            try {
+                console.log('Starting to deal cards');
+                const playerDown = await drawCards(3);
+                console.log('Drew face down cards:', playerDown);
+                const playerUp = await drawCards(3);
+                console.log('Drew face up cards:', playerUp);
+                const playerHand = await drawCards(3);
+                console.log('Drew hand cards:', playerHand);
 
-            const playerDown = await drawCards(3);
-            const playerUp = await drawCards(3);
-            const playerHand = await drawCards(3);
-
-
-            setPlayers((prevPlayers) => {
-                return prevPlayers.map((player) => {
-                    if (player.id === auth.user.id) {
-                        return {
-                            ...player,
-                            faceDownCards: playerDown,
-                            faceUpCards: playerUp,
-                            handCards: playerHand,
-                        };
-                    }
-                    return player;
+                setPlayers(prevPlayers => {
+                    const newPlayers = prevPlayers.map(player => {
+                        if (player.id === auth.user.id) {
+                            console.log('Updating player cards:', player.name);
+                            return {
+                                ...player,
+                                faceDownCards: playerDown,
+                                faceUpCards: playerUp,
+                                handCards: playerHand,
+                            };
+                        }
+                        return player;
+                    });
+                    console.log('New players state:', newPlayers);
+                    return newPlayers;
                 });
-            });
-
-
+                setCardsDealt(true);
+            } catch (error) {
+                console.error('Error dealing cards:', error);
+            }
         };
-        if (deckId) {
-            dealCards();
-        }
-    }, [deckId]);
+
+        dealCards();
+    }, [gameStarted, deckId.current]);
+
 
     return (
         <Layout auth={auth}>
             <Head title="Multiplayer Game" />
             <h1>
-                Hello players {players.map((player) => player.name + " ")}
+                Hello players {players.map(player => player.name + " ")}
             </h1>
 
             {!gameStarted && (
@@ -157,12 +178,18 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             {gameStarted && (
                 <div>
                     <h2>Game Started!</h2>
-                    {players.map((player) => (
+                    {players.map(player => (
                         <div key={player.id}>
                             <h3>{player.name}'s Cards:</h3>
-                            <p>Face Down: {player.faceDownCards.length}</p>
-                            <p>Face Up: {player.faceUpCards.length}</p>
-                            <p>In Hand: {player.handCards.length}</p>
+                            {player.id === auth.user.id && (
+                                <MyCards
+                                    handCards={player.handCards}
+                                    downCards={player.faceDownCards}
+                                    upCards={player.faceUpCards}
+                                    handleCardPlacement={handleCardPlacement}
+                                    isValidMove={isValidMove}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>

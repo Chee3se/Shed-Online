@@ -108,6 +108,12 @@ export default function LobbyShow({
         if (window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting')) {
             router.get(route('lobby.game', lobby.code));
         }
+        window.Echo.leave(`lobby.${lobby.code}`);
+        if (leaveOnRedirect.current) {
+            axios.post(route('lobby.leave', lobby.code)).then(() => {
+                window.Echo.leave(`lobby.${lobby.code}`);
+            });
+        }
     };
 
 
