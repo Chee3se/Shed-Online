@@ -22,6 +22,9 @@ return new class extends Migration
             $table->boolean('is_public')->default(true);
             $table->timestamps();
         });
+        Schema::table('lobbies', function (Blueprint $table) {
+            $table->timestamp('join_timestamp')->nullable();
+        });
     }
 
     /**
@@ -30,5 +33,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('lobbies');
+        Schema::table('lobbies', function (Blueprint $table) {
+            $table->dropColumn('join_timestamp');
+        });
     }
 };

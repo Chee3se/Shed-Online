@@ -94,14 +94,19 @@ class LobbyController
     public function show(Request $request, $code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
+
+        // Only increment if coming from a different URL
         if (Request::create(URL::previous())->url() !== $request->url()) {
             $lobby->increment('current_players');
+            $lobby->update(['leave_timestamp' => null]); // Reset leave timestamp
+
             Broadcast::on('lobbies')
                 ->toOthers()
                 ->with($lobby)
                 ->as('lobby-updated')
                 ->sendNow();
         }
+
         return Inertia::render('LobbyShow', [
             'initialLobby' => $lobby,
             'canJoin' => $lobby->current_players < $lobby->max_players,
@@ -112,23 +117,13 @@ class LobbyController
     public function leave($code)
     {
         $lobby = Lobby::where('code', $code)->firstOrFail();
-        $user = auth()->user();
-
-        // If user is the owner, delete the entire lobby
-        if ($lobby->owner_id === $user->id) {
-            Broadcast::on('lobbies')
-                ->toOthers()
-                ->with($lobby)
-                ->as('lobby-deleted')
-                ->sendNow();
-            $lobby->delete();
-            return redirect()->route('lobby')->with('success', 'Lobby deleted');
-        }
-
-        // Decrement current players count
         $lobby->decrement('current_players');
 
-        // Broadcast lobby update
+        // Set leave timestamp when last player leaves
+        if ($lobby->current_players === 0) {
+            $lobby->update(['leave_timestamp' => now()]);
+        }
+
         Broadcast::on('lobbies')
             ->toOthers()
             ->with($lobby)
