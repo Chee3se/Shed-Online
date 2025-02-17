@@ -23,6 +23,20 @@ interface GameState {
     turnOrder: number[];
 }
 
+interface Card {
+    code: string;
+    image: string;
+    images: {
+        svg: string;
+        png: string;
+    };
+    value: string;
+    suit: string;
+    offsetX?: number;
+    offsetY?: number;
+    rotation?: number;
+}
+
 export default function Multiplayer({ auth, code, lobby }: { auth: any; code: string; lobby: any }) {
     const [players, setPlayers] = useState<Player[]>([{
         id: auth.user.id,
@@ -305,61 +319,28 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         }
     };
 
-    const dealCards = async () => {
-        if (!deckId.current || cardsDealt) return;
+    const drawCards = async (count: number): Promise<Card[]> => {
+        if (!deckId.current) {
+            throw new Error('No deck ID available');
+        }
 
         try {
-            const playerDown = await drawCards(3);
-            const playerUp = await drawCards(3);
-            const playerHand = await drawCards(3);
+            const response = await axios.post(`/cards/${code}/draw`, {
+                deck_id: deckId.current,
+                count: count
+            });
 
-            setPlayers(prevPlayers => prevPlayers.map(player => {
-                if (player.id === auth.user.id) {
-                    return {
-                        ...player,
-                        faceDownCards: playerDown,
-                        faceUpCards: playerUp,
-                        handCards: playerHand,
-                    };
-                }
-                // Initialize other players with face-down cards
-                return {
-                    ...player,
-                    faceDownCards: Array(3).fill({
-                        code: 'back',
-                        image: 'https://deckofcardsapi.com/static/img/back.png',
-                        images: {
-                            png: 'https://deckofcardsapi.com/static/img/back.png',
-                            svg: ''
-                        },
-                        value: '',
-                        suit: ''
-                    }),
-                    faceUpCards: Array(3).fill({
-                        code: 'back',
-                        image: 'https://deckofcardsapi.com/static/img/back.png',
-                        images: {
-                            png: 'https://deckofcardsapi.com/static/img/back.png',
-                            svg: ''
-                        },
-                        value: '',
-                        suit: ''
-                    }),
-                    handCards: Array(3).fill({
-                        code: 'back',
-                        image: 'https://deckofcardsapi.com/static/img/back.png',
-                        images: {
-                            png: 'https://deckofcardsapi.com/static/img/back.png',
-                            svg: ''
-                        },
-                        value: '',
-                        suit: ''
-                    })
-                };
+            const cards: Card[] = response.data.map((card: Card) => ({
+                ...card,
+                offsetX: Math.random() * 10 - 5,
+                offsetY: Math.random() * 10 - 5,
+                rotation: Math.random() * 20 - 10
             }));
-            setCardsDealt(true);
+
+            return cards;
         } catch (error) {
-            console.error('Error dealing cards:', error);
+            console.error('Error drawing cards:', error);
+            throw error;
         }
     };
 
@@ -381,7 +362,40 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                             handCards: playerHand,
                         };
                     }
-                    return player;
+                    // Initialize other players with face-down cards
+                    return {
+                        ...player,
+                        faceDownCards: Array(3).fill(null).map((_, index) => ({
+                            code: `back-down-${index}`,
+                            image: 'https://deckofcardsapi.com/static/img/back.png',
+                            images: {
+                                png: 'https://deckofcardsapi.com/static/img/back.png',
+                                svg: ''
+                            },
+                            value: '',
+                            suit: ''
+                        })),
+                        faceUpCards: Array(3).fill(null).map((_, index) => ({
+                            code: `back-up-${index}`,
+                            image: 'https://deckofcardsapi.com/static/img/back.png',
+                            images: {
+                                png: 'https://deckofcardsapi.com/static/img/back.png',
+                                svg: ''
+                            },
+                            value: '',
+                            suit: ''
+                        })),
+                        handCards: Array(3).fill(null).map((_, index) => ({
+                            code: `back-hand-${index}`,
+                            image: 'https://deckofcardsapi.com/static/img/back.png',
+                            images: {
+                                png: 'https://deckofcardsapi.com/static/img/back.png',
+                                svg: ''
+                            },
+                            value: '',
+                            suit: ''
+                        }))
+                    };
                 }));
                 setCardsDealt(true);
             } catch (error) {
@@ -420,27 +434,9 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                                 <div key={player.id} className={`${player.id === gameState.currentTurn ? 'border-2 border-green-500 p-4 rounded' : ''}`}>
                                     <h3>{player.name}'s Cards {player.id === gameState.currentTurn && '(Current Turn)'}</h3>
                                     <OpponentCards
-                                        handCards={Array(player.handCards.length).fill({
-                                            code: 'back',
-                                            image: 'https://deckofcardsapi.com/static/img/back.png',
-                                            images: {
-                                                png: 'https://deckofcardsapi.com/static/img/back.png',
-                                                svg: ''
-                                            },
-                                            value: '',
-                                            suit: ''
-                                        })}
-                                        downCards={Array(player.faceDownCards.length).fill({
-                                            code: 'back',
-                                            image: 'https://deckofcardsapi.com/static/img/back.png',
-                                            images: {
-                                                png: 'https://deckofcardsapi.com/static/img/back.png',
-                                                svg: ''
-                                            },
-                                            value: '',
-                                            suit: ''
-                                        })}
-                                        upCards={player.faceUpCards}
+                                        handCards={player.handCards}  // Keep track of actual cards but display as face down
+                                        downCards={player.faceDownCards}  // Keep track of actual cards but display as face down
+                                        upCards={player.faceUpCards}  // Show face up cards as they are visible to all
                                     />
                                 </div>
                             );
