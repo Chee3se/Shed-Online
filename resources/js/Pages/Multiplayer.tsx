@@ -112,22 +112,21 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         updatedPlayer.faceDownCards = p.faceDownCards.filter(c => !cardArray.some(played => played.code === c.code));
                     }
 
-                    // Draw cards if needed
-                    if (updatedPlayer.handCards.length < 3) {
-                        const cardsNeeded = Math.min(3 - updatedPlayer.handCards.length, 52 - (players.length * 9) - usedPile.length - middlePile.length);
-                        if (cardsNeeded > 0) {
-                            drawCards(cardsNeeded).then(newCards => {
-                                setPlayers(prevPlayers => prevPlayers.map(p => {
-                                    if (p.id === auth.user.id) {
-                                        return {
-                                            ...p,
-                                            handCards: [...p.handCards, ...newCards]
-                                        };
-                                    }
-                                    return p;
-                                }));
-                            });
-                        }
+                    // Draw cards immediately after playing
+                    const remainingCount = 52 - (players.length * 9) - usedPile.length - middlePile.length;
+                    if (remainingCount > 0 && updatedPlayer.handCards.length < 3) {
+                        const cardsToDrawCount = Math.min(cardArray.length, remainingCount);
+                        drawCards(cardsToDrawCount).then(newCards => {
+                            setPlayers(prevPlayers => prevPlayers.map(p => {
+                                if (p.id === auth.user.id) {
+                                    return {
+                                        ...p,
+                                        handCards: [...p.handCards, ...newCards]
+                                    };
+                                }
+                                return p;
+                            }));
+                        });
                     }
                     return updatedPlayer;
                 }
@@ -140,6 +139,10 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             });
         } else {
             // Invalid move - pick up the pile
+            if (middlePile.length === 0) return; // Prevent picking up empty pile
+
+            const nextPlayer = getNextPlayerId();
+
             setPlayers(prevPlayers => prevPlayers.map(p => {
                 if (p.id === auth.user.id) {
                     return {
@@ -154,7 +157,11 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 ...prevState,
                 currentTurn: nextPlayer
             }));
-            await axios.post(`/cards/${code}/take`, { cards: middlePile });
+
+            await axios.post(`/cards/${code}/take`, {
+                cards: middlePile,
+                next_player: nextPlayer
+            });
         }
     };
 
@@ -216,6 +223,23 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             .leaving((user: Player) => {
                 setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== user.id));
             });
+
+        channel.listen('.card-taken', ({ cards, player_id, next_player }: { cards: Card[], player_id: number, next_player: number }) => {
+            setPlayers(prevPlayers => prevPlayers.map(p => {
+                if (p.id === player_id) {
+                    return {
+                        ...p,
+                        handCards: [...p.handCards, ...cards]
+                    };
+                }
+                return p;
+            }));
+            setMiddlePile([]);
+            setGameState(prevState => ({
+                ...prevState,
+                currentTurn: next_player
+            }));
+        });
 
         channel.listen('.deck-generated', ({ deck_id }: { deck_id: string }) => {
             deckId.current = deck_id;
@@ -281,18 +305,61 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         }
     };
 
-    const drawCards = async (count: number): Promise<Card[]> => {
-        if (!deckId.current || cardsDealt) return [];
+    const dealCards = async () => {
+        if (!deckId.current || cardsDealt) return;
 
         try {
-            const response = await axios.post<Card[]>(`/cards/${code}/draw`, {
-                deck_id: deckId.current,
-                count: count,
-            });
-            return response.data;
+            const playerDown = await drawCards(3);
+            const playerUp = await drawCards(3);
+            const playerHand = await drawCards(3);
+
+            setPlayers(prevPlayers => prevPlayers.map(player => {
+                if (player.id === auth.user.id) {
+                    return {
+                        ...player,
+                        faceDownCards: playerDown,
+                        faceUpCards: playerUp,
+                        handCards: playerHand,
+                    };
+                }
+                // Initialize other players with face-down cards
+                return {
+                    ...player,
+                    faceDownCards: Array(3).fill({
+                        code: 'back',
+                        image: 'https://deckofcardsapi.com/static/img/back.png',
+                        images: {
+                            png: 'https://deckofcardsapi.com/static/img/back.png',
+                            svg: ''
+                        },
+                        value: '',
+                        suit: ''
+                    }),
+                    faceUpCards: Array(3).fill({
+                        code: 'back',
+                        image: 'https://deckofcardsapi.com/static/img/back.png',
+                        images: {
+                            png: 'https://deckofcardsapi.com/static/img/back.png',
+                            svg: ''
+                        },
+                        value: '',
+                        suit: ''
+                    }),
+                    handCards: Array(3).fill({
+                        code: 'back',
+                        image: 'https://deckofcardsapi.com/static/img/back.png',
+                        images: {
+                            png: 'https://deckofcardsapi.com/static/img/back.png',
+                            svg: ''
+                        },
+                        value: '',
+                        suit: ''
+                    })
+                };
+            }));
+            setCardsDealt(true);
         } catch (error) {
-            console.error('Error drawing cards:', error);
-            return [];
+            console.error('Error dealing cards:', error);
         }
     };
 

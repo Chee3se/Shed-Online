@@ -105,11 +105,20 @@ class GameController
         $request->validate([
             'cards' => 'required|array',
             'cards.*.code' => 'required|string',
+            'next_player' => 'required|integer'
         ]);
+
         $cards = $request->get('cards');
-        Broadcast::presence('lobby.'.$code)
+        $id = auth()->id();
+        $nextPlayer = $request->get('next_player');
+
+        Broadcast::presence('lobby.' . $code)
             ->toOthers()
-            ->with(['cards' => $cards->count(), 'player_id' => auth()->id()])
+            ->with([
+                'cards' => $cards,
+                'player_id' => $id,
+                'next_player' => $nextPlayer
+            ])
             ->as('card-taken')
             ->sendNow();
 
