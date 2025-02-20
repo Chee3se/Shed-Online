@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Layout from "@/Layouts/Layout";
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { Card } from '@/types';
 import MyCards from "@/Components/Cards/MyCards";
 import OpponentCards from "@/Components/Cards/OpponentCards";
 import RemainingPile from "@/Components/Cards/RemainingPile";
@@ -50,6 +49,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     const [cardsDealt, setCardsDealt] = useState<boolean>(false);
     const [middlePile, setMiddlePile] = useState<Card[]>([]);
     const [usedPile, setUsedPile] = useState<Card[]>([]);
+    const [remainingCount, setRemainingCount] = useState<number>(52 - 9);
     const [gameState, setGameState] = useState<GameState>({
         currentTurn: lobby.owner_id,
         turnOrder: []
@@ -126,10 +126,9 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         updatedPlayer.faceDownCards = p.faceDownCards.filter(c => !cardArray.some(played => played.code === c.code));
                     }
 
-                    // Draw cards immediately after playing
-                    const remainingCount = 52 - (players.length * 9) - usedPile.length - middlePile.length;
-                    if (remainingCount > 0 && updatedPlayer.handCards.length < 3) {
-                        const cardsToDrawCount = Math.min(cardArray.length, remainingCount);
+                    // Draw cards to ensure the player has 3 cards in hand
+                    const cardsToDrawCount = Math.min(3 - updatedPlayer.handCards.length, remainingCount);
+                    if (cardsToDrawCount > 0) {
                         drawCards(cardsToDrawCount).then(newCards => {
                             setPlayers(prevPlayers => prevPlayers.map(p => {
                                 if (p.id === auth.user.id) {
@@ -142,6 +141,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                             }));
                         });
                     }
+
                     return updatedPlayer;
                 }
                 return p;
@@ -305,6 +305,10 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
             }));
         });
 
+        channel.listen('.card-drawn', ({ cards, player_id }: { cards: number, player_id: number }) => {
+            setRemainingCount(prevCount => prevCount - cards);
+        });
+
         return () => {
             window.Echo.leave(`lobby.${code}`);
         };
@@ -336,6 +340,9 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 offsetY: Math.random() * 10 - 5,
                 rotation: Math.random() * 20 - 10
             }));
+
+            // Update the remaining card count
+            setRemainingCount(prevCount => prevCount - count);
 
             return cards;
         } catch (error) {
@@ -444,7 +451,7 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                         return null;
                     })}
                     <div className="flex items-center gap-6">
-                        <RemainingPile remainingCount={52 - (players.length * 9) - usedPile.length - middlePile.length} />
+                        <RemainingPile remainingCount={remainingCount} />
                         <MiddlePile middlePile={middlePile} />
                         <UsedPile usedPile={usedPile} />
                     </div>
