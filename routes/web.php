@@ -17,8 +17,8 @@ Route::get('/', function () {
 
 Route::middleware([ValidateCsrfToken::class, 'auth'])->group(function (){
     Route::get('/lobby/{code}/game', [GameController::class, 'index'])->name('lobby.game');
-    Route::post('/lobby/{code}/start', function () {
-            Broadcast::presence("lobby.{code}")->toOthers()->as('game-start')->sendNow();
+    Route::post('/lobby/{code}/start', function ($code) {
+            Broadcast::presence("lobby.{$code}")->toOthers()->as('game-start')->sendNow();
     })->name('lobby.start');
     Route::post('/generate-deck', [GameController::class, 'generateDeck'])->name('lobby.deck.generate');
     Route::post('/cards/{code}/play', [GameController::class, 'play'])->name('cards.play');

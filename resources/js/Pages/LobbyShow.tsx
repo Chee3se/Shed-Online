@@ -51,7 +51,7 @@ export default function LobbyShow({
                         : [...prevPlayers, player];
                 });
             })
-            .listen('game-start', () => {
+            .listen('.game-start', () => {
                 console.log('Game is starting');
                 leaveOnRedirect.current = false;
 
@@ -94,7 +94,7 @@ export default function LobbyShow({
     };
 
     // In the handleStartGame function
-    const handleStartGame = () => {
+    const handleStartGame = async () => {
         if (!canStartGame) {
             return;
         }
@@ -104,18 +104,16 @@ export default function LobbyShow({
         // Reset state
         setPlayers([]);
         setReadyPlayers([]);
-        console.log('Game is starting');
-        const sent = window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting');
-        router.post(route('lobby.start', lobby.code));
-        console.log('Sent game starting', sent);
-        if (sent) {
-            router.get(route('lobby.game', lobby.code));
-        }
-        window.Echo.leave(`lobby.${lobby.code}`);
-        if (leaveOnRedirect.current) {
-            axios.post(route('lobby.leave', lobby.code)).then(() => {
+
+
+        try {
+            axios.post(route('lobby.start', lobby.code)).then(() => {
                 window.Echo.leave(`lobby.${lobby.code}`);
-            });
+                router.get(route('lobby.game', lobby.code));
+            })
+        } catch (error) {
+            console.error('Failed to start game:', error);
+            leaveOnRedirect.current = true;
         }
     };
 
