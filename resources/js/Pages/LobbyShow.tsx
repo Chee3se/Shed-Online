@@ -52,7 +52,7 @@ export default function LobbyShow({
                 });
             })
             .listenForWhisper('game-starting', () => {
-
+                console.log('Game is starting');
                 leaveOnRedirect.current = false;
 
                 setPlayers([]);
