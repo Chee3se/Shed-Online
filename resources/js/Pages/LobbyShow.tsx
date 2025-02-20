@@ -104,8 +104,8 @@ export default function LobbyShow({
         // Reset state
         setPlayers([]);
         setReadyPlayers([]);
-
-        if (window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting')) {
+        const sent = window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting');
+        if (sent) {
             router.get(route('lobby.game', lobby.code));
         }
         window.Echo.leave(`lobby.${lobby.code}`);
