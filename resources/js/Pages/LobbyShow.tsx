@@ -51,7 +51,7 @@ export default function LobbyShow({
                         : [...prevPlayers, player];
                 });
             })
-            .listenForWhisper('game-starting', () => {
+            .listen('game-start', () => {
                 console.log('Game is starting');
                 leaveOnRedirect.current = false;
 
@@ -106,6 +106,7 @@ export default function LobbyShow({
         setReadyPlayers([]);
         console.log('Game is starting');
         const sent = window.Echo.join(`lobby.${lobby.code}`).whisper('game-starting');
+        router.post(route('lobby.start', lobby.code));
         console.log('Sent game starting', sent);
         if (sent) {
             router.get(route('lobby.game', lobby.code));
