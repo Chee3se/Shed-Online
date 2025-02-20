@@ -88,7 +88,7 @@ class GameController
         $nextPlayer = $request->get('next_player');
 
         Broadcast::presence('lobby.' . $code)
-            ->toOthers()
+            ->broadcastToEveryone() // Change from toOthers() to broadcastToEveryone()
             ->with([
                 'cards' => $cards,
                 'player_id' => $id,
@@ -97,7 +97,10 @@ class GameController
             ->as('card-played')
             ->sendNow();
 
-        return $cards;
+        return response()->json([
+            'success' => true,
+            'next_player' => $nextPlayer
+        ]);
     }
 
     public function take(Request $request, $code)
@@ -113,7 +116,7 @@ class GameController
         $nextPlayer = $request->get('next_player');
 
         Broadcast::presence('lobby.' . $code)
-            ->toOthers()
+            ->broadcastToEveryone() // Change from toOthers() to broadcastToEveryone()
             ->with([
                 'cards' => $cards,
                 'player_id' => $id,
@@ -122,6 +125,9 @@ class GameController
             ->as('card-taken')
             ->sendNow();
 
-        return $cards;
+        return response()->json([
+            'success' => true,
+            'next_player' => $nextPlayer
+        ]);
     }
 }
