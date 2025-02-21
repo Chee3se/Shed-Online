@@ -119,8 +119,11 @@ class LobbyController
         $lobby = Lobby::where('code', $code)->firstOrFail();
         $lobby->decrement('current_players');
 
-        // Set leave timestamp when last player leaves
-        if ($lobby->current_players === 0) {
+        // If this is from game start, or last player leaves, delete the lobby
+        if ($lobby->current_players === 0 || request()->has('game_starting')) {
+            $lobby->delete();
+        } else {
+            // Otherwise just set leave timestamp
             $lobby->update(['leave_timestamp' => now()]);
         }
 
@@ -130,7 +133,22 @@ class LobbyController
             ->as('lobby-updated')
             ->sendNow();
 
+        if (request()->has('game_starting')) {
+            return response()->json(['success' => true]);
+        }
+
         return redirect()->route('lobby')->with('success', 'Left lobby');
+    }
+    public function delete(string $code)
+    {
+        $lobby = Lobby::where('code', $code)->first();
+
+        if ($lobby) {
+            $lobby->delete();
+            return response()->json(['message' => 'Lobby deleted']);
+        }
+
+        return response()->json(['message' => 'Lobby not found'], 404);
     }
 
 

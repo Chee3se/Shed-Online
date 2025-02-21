@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/lobby/store', [LobbyController::class, 'store'])->name('lobby.store');
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
+    Route::delete('/lobby/{code}', [LobbyController::class, 'delete'])->name('lobby.delete');
 });
 
 Route::get('/singleplayer', function () {

@@ -38,7 +38,14 @@ export default function LobbyShow({
             })
             .leaving((user: Player) => {
                 console.log(user, ' left');
-                setPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
+                setPlayers((prevPlayers) => {
+                    const updatedPlayers = prevPlayers.filter((player) => player.id !== user.id);
+                    // If there are no players left, delete the lobby
+                    if (updatedPlayers.length === 0) {
+                        handleDeleteLobby();
+                    }
+                    return updatedPlayers;
+                });
                 setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
             .listenForWhisper('lobby-deleted', () => {router.get(route('lobby'));})
@@ -54,12 +61,9 @@ export default function LobbyShow({
             .listen('.game-start', () => {
                 console.log('Game is starting');
                 leaveOnRedirect.current = false;
-
                 setPlayers([]);
                 setReadyPlayers([]);
-
                 router.get(route('lobby.game', lobby.code));
-
             });
 
         return () => {
@@ -80,6 +84,14 @@ export default function LobbyShow({
             router.get(route('lobby'));
         });
     };
+    const handleDeleteLobby = async () => {
+        try {
+            await axios.delete(route('lobby.delete', lobby.code));
+            window.Echo.join(`lobby.${lobby.code}`).whisper('lobby-deleted');
+        } catch (error) {
+            console.error('Failed to delete lobby:', error);
+        }
+    };
 
     const handleReadyToggle = () => {
         const me: Player = { id: auth.user.id, name: auth.user.name };
@@ -93,7 +105,7 @@ export default function LobbyShow({
         });
     };
 
-    // In the handleStartGame function
+
     const handleStartGame = async () => {
         if (!canStartGame) {
             return;
