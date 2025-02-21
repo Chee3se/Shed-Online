@@ -80,19 +80,37 @@ class GameController
         $request->validate([
             'cards' => 'required|array',
             'cards.*.code' => 'required|string',
-            'next_player' => 'required|integer'
+            'next_player' => 'required|integer',
+            'current_player' => 'required|integer' // Add this validation
         ]);
 
         $cards = $request->get('cards');
         $id = auth()->id();
+        $currentPlayer = $request->get('current_player');
         $nextPlayer = $request->get('next_player');
 
+        // Validate that it's actually this player's turn
+        if ($currentPlayer !== $id) {
+            return response()->json([
+                'error' => 'Not your turn'
+            ], 403);
+        }
+
+        // Get the lobby to validate the turn order
+        $lobby = Lobby::where('code', $code)->first();
+        if (!$lobby) {
+            return response()->json([
+                'error' => 'Invalid lobby'
+            ], 404);
+        }
+
         Broadcast::presence('lobby.' . $code)
-            ->broadcastToEveryone() // Change from toOthers() to broadcastToEveryone()
+            ->broadcastToEveryone()
             ->with([
                 'cards' => $cards,
                 'player_id' => $id,
-                'next_player' => $nextPlayer
+                'next_player' => $nextPlayer,
+                'current_player' => $currentPlayer
             ])
             ->as('card-played')
             ->sendNow();

@@ -147,10 +147,18 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 return p;
             }));
 
-            await axios.post(`/cards/${code}/play`, {
-                cards: cardArray,
-                next_player: nextPlayer
-            });
+            try {
+                await axios.post(`/cards/${code}/play`, {
+                    cards: cardArray,
+                    next_player: nextPlayer,
+                    current_player: gameState.currentTurn // Add this line
+                });
+            } catch (error) {
+                // Handle the error, possibly revert the local state
+                console.error('Failed to play cards:', error);
+                // Optionally refresh the game state or show an error message
+                return;
+            }
         } else {
             // Invalid move - pick up the pile
             if (middlePile.length === 0) return; // Prevent picking up empty pile
