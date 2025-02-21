@@ -426,108 +426,66 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
     return (
         <Layout auth={auth}>
             <Head title="Multiplayer Game" />
-            <div className="min-h-screen bg-white px-4 py-6">
-                {!gameStarted ? (
-                    <div className="text-center py-8">
-                        <h2 className="text-xl font-semibold text-gray-800">Waiting for players to join...</h2>
-                        <p className="text-gray-600 mt-2">Players in lobby: {players.length}</p>
+            {!gameStarted ? (
+                <div>
+                    <h2>Waiting for players to join...</h2>
+                    <p>Players in lobby: {players.length}</p>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center gap-5 pt-12">
+                    <h2>Game Started!</h2>
+                    <div className="mb-4 text-lg font-semibold">
+                        {isMyTurn() ? (
+                            <span className="text-green-600">It's your turn!</span>
+                        ) : (
+                            <span className="text-red-600">
+                            Waiting for {players.find(p => p.id === gameState.currentTurn)?.name}'s turn...
+                        </span>
+                        )}
                     </div>
-                ) : (
-                    <div className="max-w-5xl mx-auto">
-                        {/* Turn Status */}
-                        <div className="text-center mb-4">
-                            {isMyTurn() ? (
-                                <span className="inline-block px-4 py-1 bg-green-50 text-green-600 rounded-full text-sm font-medium">
-                  It's your turn!
-                </span>
-                            ) : (
-                                <span className="inline-block px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                  {players.find(p => p.id === gameState.currentTurn)?.name}'s turn
-                </span>
-                            )}
-                        </div>
-
-                        {/* Opponents - Now in horizontal layout */}
-                        <div className="flex justify-center gap-4 mb-6">
-                            {players.map(player => {
-                                if (player.id !== auth.user.id) {
-                                    return (
-                                        <div
-                                            key={player.id}
-                                            className={`
-                        bg-gray-50 rounded p-3
-                        ${player.id === gameState.currentTurn ? 'ring-1 ring-blue-300' : ''}
-                      `}
-                                        >
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-sm font-medium">{player.name}</span>
-                                                {player.id === gameState.currentTurn &&
-                                                    <span className="text-xs text-blue-600">(Current)</span>
-                                                }
-                                            </div>
-                                            <OpponentCards
-                                                handCards={player.handCards}
-                                                downCards={player.faceDownCards}
-                                                upCards={player.faceUpCards}
-                                            />
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })}
-                        </div>
-
-                        {/* Game Piles */}
-                        <div className="flex justify-center items-center gap-6 mb-6">
-                            <div>
-                                <RemainingPile remainingCount={remainingCount} />
-                                <p className="mt-1 text-xs text-gray-500 text-center">{remainingCount}</p>
-                            </div>
-
-                            <div>
-                                <MiddlePile middlePile={middlePile} />
-                                <p className="mt-1 text-xs text-gray-500 text-center">Middle</p>
-                            </div>
-
-                            <div>
-                                <UsedPile usedPile={usedPile} />
-                                <p className="mt-1 text-xs text-gray-500 text-center">Used</p>
-                            </div>
-                        </div>
-
-                        {/* Player's Hand */}
-                        {(() => {
-                            const currentPlayer = players.find(player => player.id === auth.user.id);
-                            if (currentPlayer) {
-                                return (
-                                    <div
-                                        className={`
-                      bg-gray-50 rounded p-3
-                      ${isMyTurn() ? 'ring-1 ring-green-300 mb-2' : ''}
-                    `}
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-medium">Your Cards</span>
-                                            {isMyTurn() && (
-                                                <span className="text-xs text-green-600">Your Turn</span>
-                                            )}
-                                        </div>
-                                        <MyCards
-                                            handCards={currentPlayer.handCards}
-                                            downCards={currentPlayer.faceDownCards}
-                                            upCards={currentPlayer.faceUpCards}
-                                            handleCardPlacement={handleCardPlacement}
-                                            isValidMove={isValidMove}
-                                            disabled={!isMyTurn()}
-                                        />
+                    {players.map(player => {
+                        if (player.id !== auth.user.id) {
+                            return (
+                                <div key={player.id} className={`${player.id === gameState.currentTurn ? 'border-4 border-gray-300 p-4 rounded-[2vw]' : ''}`}>
+                                    <h3>{player.name}'s Cards {player.id === gameState.currentTurn && '(Current Turn)'}</h3>
+                                    <OpponentCards
+                                        handCards={player.handCards}  // Keep track of actual cards but display as face down
+                                        downCards={player.faceDownCards}  // Keep track of actual cards but display as face down
+                                        upCards={player.faceUpCards}  // Show face up cards as they are visible to all
+                                    />
+                                </div>
+                            );
+                        }
+                        return null;
+                    })}
+                    <div className="flex items-center gap-6">
+                        <RemainingPile remainingCount={remainingCount} />
+                        <MiddlePile middlePile={middlePile} />
+                        <UsedPile usedPile={usedPile} />
+                    </div>
+                    {(() => {
+                        const currentPlayer = players.find(player => player.id === auth.user.id);
+                        if (currentPlayer) {
+                            return (
+                                <div key={currentPlayer.id} className={`${isMyTurn() ? 'border-4 border-gray-300 p-4 rounded-[2vw]' : ''}`}>
+                                    <div className="pr-1">
+                                        <h3>{currentPlayer.name}'s Cards {isMyTurn() && '(Your Turn)'} </h3>
                                     </div>
-                                );
-                            }
-                            return null;
-                        })()}
-                    </div>
-                )}
-            </div>
+                                    <MyCards
+                                        handCards={currentPlayer.handCards}
+                                        downCards={currentPlayer.faceDownCards}
+                                        upCards={currentPlayer.faceUpCards}
+                                        handleCardPlacement={handleCardPlacement}
+                                        isValidMove={isValidMove}
+                                        disabled={!isMyTurn()}
+                                    />
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
+                </div>
+            )}
         </Layout>
     );
 }
