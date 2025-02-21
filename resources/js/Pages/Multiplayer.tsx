@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Layout from "@/Layouts/Layout";
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import MyCards from "@/Components/Cards/MyCards";
 import OpponentCards from "@/Components/Cards/OpponentCards";
@@ -243,7 +243,16 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                 });
             })
             .leaving((user: Player) => {
-                setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== user.id));
+                setPlayers(prevPlayers => {
+                    const updatedPlayers = prevPlayers.filter(player => player.id !== user.id);
+
+                    // If this was the last player, clean up the lobby
+                    if (updatedPlayers.length === 0) {
+                        cleanupEmptyLobby();
+                    }
+
+                    return updatedPlayers;
+                });
             });
 
         channel.listen('.card-taken', ({ cards, player_id, next_player }: { cards: Card[], player_id: number, next_player: number }) => {
@@ -303,7 +312,6 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                     setMiddlePile(prev => [...prev, ...updatedCards]);
                 }
 
-                // Always update turn, regardless of special cards
                 setGameState(prevState => ({
                     ...prevState,
                     currentTurn: next_player
@@ -318,9 +326,36 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         });
 
         return () => {
-            window.Echo.leave(`lobby.${code}`);
+            leaveLobbyAndCleanup();
         };
     }, [code]);
+
+    const cleanupEmptyLobby = async () => {
+        try {
+            await axios.delete(route('lobby.delete', code));
+            localStorage.removeItem('deckId');
+            router.get(route('lobby'));
+        } catch (error) {
+            console.error('Failed to cleanup empty lobby:', error);
+        }
+    };
+
+
+    const leaveLobbyAndCleanup = async () => {
+        try {
+
+            window.Echo.leave(`lobby.${code}`);
+            await axios.post(route('lobby.leave', code));
+            const response = await axios.get(route('lobby', code));
+            const remainingPlayers = response.data.players;
+
+            if (remainingPlayers.length === 0) {
+                await cleanupEmptyLobby();
+            }
+        } catch (error) {
+            console.error('Error during lobby cleanup:', error);
+        }
+    };
 
     const startGame = async (players: Player[]) => {
         if (gameStarted) return;
