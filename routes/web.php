@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/lobby/{code}', [LobbyController::class, 'show'])->name('lobby.show');
     Route::post('/lobby/{code}/leave', [LobbyController::class, 'leave'])->name('lobby.leave');
     Route::delete('/lobby/{code}', [LobbyController::class, 'delete'])->name('lobby.delete');
+    Route::patch('/lobby/{code}/status', [LobbyController::class, 'updateStatus'])->name('lobby.update-status');
 });
 
 Route::get('/singleplayer', function () {

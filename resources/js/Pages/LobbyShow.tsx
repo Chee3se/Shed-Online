@@ -40,15 +40,17 @@ export default function LobbyShow({
                 console.log(user, ' left');
                 setPlayers((prevPlayers) => {
                     const updatedPlayers = prevPlayers.filter((player) => player.id !== user.id);
-                    // If there are no players left, delete the lobby
+                    // If there are no players left, make the lobby private
                     if (updatedPlayers.length === 0) {
-                        handleDeleteLobby();
+                        handleEmptyLobby();
                     }
                     return updatedPlayers;
                 });
                 setReadyPlayers((prevPlayers) => prevPlayers.filter((player) => player.id !== user.id));
             })
-            .listenForWhisper('lobby-deleted', () => {router.get(route('lobby'));})
+            .listenForWhisper('lobby-status-changed', (newStatus: 'public' | 'private') => {
+                setLobby(prev => ({ ...prev, status: newStatus }));
+            })
             .listenForWhisper('ready-toggle', (player: Player) => {
                 setReadyPlayers((prevPlayers) => {
                     const isPlayerReady = prevPlayers.some((p) => p.id === player.id);
@@ -69,9 +71,7 @@ export default function LobbyShow({
         return () => {
             window.Echo.leave(`lobby.${lobby.code}`);
             if (leaveOnRedirect.current) {
-                axios.post(route('lobby.leave', lobby.code)).then(() => {
-                    window.Echo.leave(`lobby.${lobby.code}`);
-                });
+                axios.post(route('lobby.leave', lobby.code));
             }
         };
     }, [lobby.code]);
@@ -84,14 +84,22 @@ export default function LobbyShow({
             router.get(route('lobby'));
         });
     };
-    const handleDeleteLobby = async () => {
+    const handleEmptyLobby = async () => {
         try {
-            await axios.delete(route('lobby.delete', lobby.code));
-            window.Echo.join(`lobby.${lobby.code}`).whisper('lobby-deleted');
+            // Instead of deleting, update lobby status to private
+            await axios.patch(route('lobby.update-status', lobby.code), {
+                status: 0
+            });
+
+            // Notify other clients about the status change
+            window.Echo.join(`lobby.${lobby.code}`).whisper('lobby-status-changed', 'private');
+
+            console.log('Lobby set to private due to no players');
         } catch (error) {
-            console.error('Failed to delete lobby:', error);
+            console.error('Failed to update lobby status:', error);
         }
     };
+
 
     const handleReadyToggle = () => {
         const me: Player = { id: auth.user.id, name: auth.user.name };

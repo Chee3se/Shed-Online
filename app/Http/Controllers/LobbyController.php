@@ -151,6 +151,15 @@ class LobbyController
         return response()->json(['message' => 'Lobby not found'], 404);
     }
 
+    public function updateStatus(Request $request, $code)
+    {
+        $lobby = Lobby::where('code', $code)->firstOrFail();
+        $lobby->is_public = $request->status;
+        $lobby->save();
+
+        return response()->json(['status' => 'success']);
+    }
+
 
 
 }
