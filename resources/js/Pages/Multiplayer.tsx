@@ -262,47 +262,47 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         });
 
         channel.listen('.card-played', ({ cards, player_id, next_player }: { cards: Card[], player_id: number, next_player: number }) => {
-            const isSpecialCard = cards[0].value === '6' || cards[0].value === '10';
-            const newMiddlePile = [...middlePile, ...cards];
-            const fourOfAKind = newMiddlePile.filter(card => card.value === cards[0].value).length === 4;
+            setPlayers(prevPlayers => {
+                const updatedPlayers = prevPlayers.map(p => {
+                    if (p.id === player_id) {
+                        const updatedPlayer = { ...p };
+                        if (p.handCards.length > 0) {
+                            updatedPlayer.handCards = p.handCards.filter(c => !cards.some(played => played.code === c.code));
+                        } else if (p.faceUpCards.length > 0) {
+                            updatedPlayer.faceUpCards = p.faceUpCards.filter(c => !cards.some(played => played.code === c.code));
+                        } else if (p.faceDownCards.length > 0) {
+                            updatedPlayer.faceDownCards = p.faceDownCards.filter(c => !cards.some(played => played.code === c.code));
+                        }
+                        return updatedPlayer;
+                    }
+                    return p;
+                });
 
-            if (cards[0].value === '10' || fourOfAKind) {
-                setUsedPile(prev => [...prev, ...newMiddlePile]);
-                setMiddlePile([]);
-                if (!fourOfAKind && cards[0].value !== '10') {
-                    setGameState(prevState => ({
-                        ...prevState,
-                        currentTurn: next_player
+                const isSpecialCard = cards[0].value === '6' || cards[0].value === '10';
+                const newMiddlePile = [...middlePile, ...cards];
+                const fourOfAKind = newMiddlePile.filter(card => card.value === cards[0].value).length === 4;
+
+                if (cards[0].value === '10' || fourOfAKind) {
+                    setUsedPile(prev => [...prev, ...newMiddlePile]);
+                    setMiddlePile([]);
+                } else {
+                    const updatedCards = cards.map(card => ({
+                        ...card,
+                        offsetX: Math.random() * 10 - 5,
+                        offsetY: Math.random() * 10 - 5,
+                        rotation: Math.random() * 20 - 10
                     }));
+                    setMiddlePile(prev => [...prev, ...updatedCards]);
                 }
-            } else {
-                const updatedCards = cards.map(card => ({
-                    ...card,
-                    offsetX: Math.random() * 10 - 5,
-                    offsetY: Math.random() * 10 - 5,
-                    rotation: Math.random() * 20 - 10
-                }));
-                setMiddlePile(prev => [...prev, ...updatedCards]);
+
+                // Always update turn, regardless of special cards
                 setGameState(prevState => ({
                     ...prevState,
                     currentTurn: next_player
                 }));
-            }
 
-            setPlayers(prevPlayers => prevPlayers.map(p => {
-                if (p.id === player_id) {
-                    const updatedPlayer = { ...p };
-                    if (p.handCards.length > 0) {
-                        updatedPlayer.handCards = p.handCards.filter(c => !cards.some(played => played.code === c.code));
-                    } else if (p.faceUpCards.length > 0) {
-                        updatedPlayer.faceUpCards = p.faceUpCards.filter(c => !cards.some(played => played.code === c.code));
-                    } else if (p.faceDownCards.length > 0) {
-                        updatedPlayer.faceDownCards = p.faceDownCards.filter(c => !cards.some(played => played.code === c.code));
-                    }
-                    return updatedPlayer;
-                }
-                return p;
-            }));
+                return updatedPlayers;
+            });
         });
 
         channel.listen('.card-drawn', ({ cards, player_id }: { cards: number, player_id: number }) => {
