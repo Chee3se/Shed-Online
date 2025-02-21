@@ -72,38 +72,35 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
         const cardArray = Array.isArray(cards) ? cards : [cards];
         if (cardArray.length === 0) return;
 
-        // Lock the turn immediately to prevent multiple plays
-        setGameState(prevState => ({
-            ...prevState,
-            currentTurn: -1 // Temporary lock
-        }));
+        const sameValue = cardArray.every(card => card.value === cardArray[0].value);
+        if (!sameValue) {
+            console.error('Cards must have the same value for multiple placement');
+            return;
+        }
 
-        try {
-            const nextPlayer = getNextPlayerId();
+        const currentPlayer = players.find(p => p.id === auth.user.id);
+        if (!currentPlayer) return;
 
-            // Send the server request first
-            const response = await axios.post(`/cards/${code}/play`, {
-                cards: cardArray,
-                next_player: nextPlayer
-            });
+        const topCard = middlePile[middlePile.length - 1];
+        const isSpecialCard = cardArray[0].value === '6' || cardArray[0].value === '10';
+        const newMiddlePile = [...middlePile, ...cardArray];
+        const fourOfAKind = newMiddlePile.filter(card => card.value === cardArray[0].value).length === 4;
 
-            if (!response.data.success) {
-                // Revert turn if request failed
-                setGameState(prevState => ({
-                    ...prevState,
-                    currentTurn: auth.user.id
-                }));
-                return;
-            }
+        let nextPlayer = getNextPlayerId();
+        if ((cardArray[0].value === '10' || fourOfAKind) && !fourOfAKind && cardArray[0].value === '10') {
+            nextPlayer = gameState.currentTurn;
+        }
 
-            // Local state updates only after successful server response
-            const isSpecialCard = cardArray[0].value === '6' || cardArray[0].value === '10';
-            const newMiddlePile = [...middlePile, ...cardArray];
-            const fourOfAKind = newMiddlePile.filter(card => card.value === cardArray[0].value).length === 4;
-
+        if (!topCard || getCardValue(cardArray[0]) >= getCardValue(topCard) || isSpecialCard) {
             if (cardArray[0].value === '10' || fourOfAKind) {
                 setUsedPile(prev => [...prev, ...newMiddlePile]);
                 setMiddlePile([]);
+                if (!fourOfAKind && cardArray[0].value !== '10') {
+                    setGameState(prevState => ({
+                        ...prevState,
+                        currentTurn: nextPlayer
+                    }));
+                }
             } else {
                 const updatedCards = cardArray.map(card => ({
                     ...card,
@@ -112,31 +109,73 @@ export default function Multiplayer({ auth, code, lobby }: { auth: any; code: st
                     rotation: Math.random() * 20 - 10
                 }));
                 setMiddlePile(prev => [...prev, ...updatedCards]);
+                setGameState(prevState => ({
+                    ...prevState,
+                    currentTurn: nextPlayer
+                }));
             }
 
-            // Update local player cards
             setPlayers(prevPlayers => prevPlayers.map(p => {
                 if (p.id === auth.user.id) {
                     const updatedPlayer = { ...p };
-                    if (p.handCards.length > 0) {
+                    if (p.handCards.some(c => cardArray.some(played => played.code === c.code))) {
                         updatedPlayer.handCards = p.handCards.filter(c => !cardArray.some(played => played.code === c.code));
-                    } else if (p.faceUpCards.length > 0) {
+                    } else if (p.faceUpCards.some(c => cardArray.some(played => played.code === c.code))) {
                         updatedPlayer.faceUpCards = p.faceUpCards.filter(c => !cardArray.some(played => played.code === c.code));
-                    } else if (p.faceDownCards.length > 0) {
+                    } else if (p.faceDownCards.some(c => cardArray.some(played => played.code === c.code))) {
                         updatedPlayer.faceDownCards = p.faceDownCards.filter(c => !cardArray.some(played => played.code === c.code));
                     }
+
+                    // Draw cards to ensure the player has 3 cards in hand
+                    const cardsToDrawCount = Math.min(3 - updatedPlayer.handCards.length, remainingCount);
+                    if (cardsToDrawCount > 0) {
+                        drawCards(cardsToDrawCount).then(newCards => {
+                            setPlayers(prevPlayers => prevPlayers.map(p => {
+                                if (p.id === auth.user.id) {
+                                    return {
+                                        ...p,
+                                        handCards: [...p.handCards, ...newCards]
+                                    };
+                                }
+                                return p;
+                            }));
+                        });
+                    }
+
                     return updatedPlayer;
                 }
                 return p;
             }));
 
-        } catch (error) {
-            console.error('Error playing cards:', error);
-            // Revert turn if request failed
+            await axios.post(`/cards/${code}/play`, {
+                cards: cardArray,
+                next_player: nextPlayer
+            });
+        } else {
+            // Invalid move - pick up the pile
+            if (middlePile.length === 0) return; // Prevent picking up empty pile
+
+            const nextPlayer = getNextPlayerId();
+
+            setPlayers(prevPlayers => prevPlayers.map(p => {
+                if (p.id === auth.user.id) {
+                    return {
+                        ...p,
+                        handCards: [...p.handCards, ...middlePile]
+                    };
+                }
+                return p;
+            }));
+            setMiddlePile([]);
             setGameState(prevState => ({
                 ...prevState,
-                currentTurn: auth.user.id
+                currentTurn: nextPlayer
             }));
+
+            await axios.post(`/cards/${code}/take`, {
+                cards: middlePile,
+                next_player: nextPlayer
+            });
         }
     };
 
